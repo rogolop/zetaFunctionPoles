@@ -342,7 +342,7 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 	
 	a := R!0;
 	e := 0;
-	PI_blowup := [x, y];
+	PI_blowup := [P| x, y];
 	
 	if verboseLevel in {"detailed"} then printf "Start Blowup\n"; end if;
 	while true do
@@ -362,14 +362,14 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 				if verboseLevel in {"detailed"} then printf "Tangent=C*x^e => change of variables (y,x) to make x=0 not tangent\n"; end if;
 				// Tangent=C*x^e => change of variables (y,x) to make x=0 not tangent
 				
-				pi := [y, x];
-				PI_blowup := [Evaluate(t, pi) : t in PI_blowup];
+				pi := [P| y, x];
+				PI_blowup := [P| Evaluate(t, pi) : t in PI_blowup];
 				
 				// The following should be irrelevant:
 				xExp_f, yExp_f := Explode(< yExp_f, xExp_f >);
 				xExp_w, yExp_w := Explode(< yExp_w, xExp_w >);
-				units_f := {* Evaluate(t, pi)^^m : t -> m in units_f *};
-				units_w := {* Evaluate(t, pi)^^m : t -> m in units_w *};
+				units_f := {*P| Evaluate(t, pi)^^m : t -> m in units_f *};
+				units_w := {*P| Evaluate(t, pi)^^m : t -> m in units_w *};
 				
 				// Strict transform of f
 				strictTransform_f, A, B := strictPart(Evaluate(strictTransform_f, pi));
@@ -377,7 +377,7 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 				yExp_f +:= B;
 				
 				// dy^dx = -dx^dy
-				Include(~units_w, -1);
+				Include(~units_w, P!-1);
 				
 				if verboseLevel in {"detailed"} then printf "strictTransform_f = %o\n", strictTransform_f; end if;
 			else
@@ -423,8 +423,8 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 			// Tangent=C*x^e => next point is satellite
 			pointType := 2;
 			
-			pi := [x*y, x];
-			PI_blowup := [Evaluate(t, pi) : t in PI_blowup];
+			pi := [P| x*y, x];
+			PI_blowup := [P| Evaluate(t, pi) : t in PI_blowup];
 			
 			// x^xExp * y^yExp -> (x*y)^xExp * x^yExp = x^(xExp+yExp) * y^xExp
 			xExp_f, yExp_f := Explode(< xExp_f + yExp_f, xExp_f >);
@@ -432,8 +432,8 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 			
 			// Blow up the units, preserve multiplicity
 			// They will continue to be units after blowup (no common x,y)
-			units_f := {* Evaluate(t, pi)^^m : t -> m in units_f *};
-			units_w := {* Evaluate(t, pi)^^m : t -> m in units_w *};
+			units_f := {*P| Evaluate(t, pi)^^m : t -> m in units_f *};
+			units_w := {*P| Evaluate(t, pi)^^m : t -> m in units_w *};
 			
 			// Blow up the strict transform of f
 			strictTransform_f, A, B := strictPart(Evaluate(strictTransform_f, pi));
@@ -443,13 +443,13 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 			// Pullback of dx^dy by pi
 			// dx^dy -> d(x*y)^dx = (y dx + x dy)^dx = -x dx^dy
 			xExp_w +:= 1;
-			Include(~units_w, -1);
+			Include(~units_w, P!-1);
 		else
 			if verboseLevel in {"detailed"} then printf "Case not tangent to x=0\n"; end if;
 			// Case not tangent to x=0
 			
-			pi := [x, x*y];
-			PI_blowup := [Evaluate(t, pi) : t in PI_blowup];
+			pi := [P| x, x*y];
+			PI_blowup := [P| Evaluate(t, pi) : t in PI_blowup];
 			
 			// x^xExp * y^yExp -> x^xExp * (x*y)^yExp = x^(xExp+yExp) * y^yExp
 			xExp_f, yExp_f := Explode(< xExp_f + yExp_f, yExp_f >);
@@ -457,8 +457,8 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 			
 			// Blow up the units, preserve multiplicity
 			// They will continue to be units after blowup (no common x,y)
-			units_f := {* Evaluate(t, pi)^^m : t -> m in units_f *};
-			units_w := {* Evaluate(t, pi)^^m : t -> m in units_w *};
+			units_f := {*P| Evaluate(t, pi)^^m : t -> m in units_f *};
+			units_w := {*P| Evaluate(t, pi)^^m : t -> m in units_w *};
 			
 			// Blow up the strict transform of f
 			strictTransform_f, A, B := strictPart(Evaluate(strictTransform_f, pi));
@@ -513,14 +513,14 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 				// Free point
 				pointType := 1;
 				
-				pi := [x, a + y];
-				PI_blowup := [Evaluate(t, pi) : t in PI_blowup];
+				pi := [P| x, a + y];
+				PI_blowup := [P| Evaluate(t, pi) : t in PI_blowup];
 				
 				// Change variables of each term, preserve multiplicity
 				// They are units and will be units after change of variables
 				// because the point is free: no common x,y
-				units_f := {* Evaluate(t, pi)^^m : t -> m in units_f *};
-				units_w := {* Evaluate(t, pi)^^m : t -> m in units_w *};
+				units_f := {*P| Evaluate(t, pi)^^m : t -> m in units_f *};
+				units_w := {*P| Evaluate(t, pi)^^m : t -> m in units_w *};
 				
 				// x^xExp * y^yExp -> x^xExp * (y-a)^yExp
 				Include(~units_f, (pi[2])^^yExp_f);
@@ -565,8 +565,8 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 		printf "lambda = %o\n", lambda;
 		printf "total mophism = %o\n", PI_blowup;
 		printf "strict transform = %o\n", strictTransform_f;
-		printf "total transform of f has x^%o y^%o %o\n", xExp_f, yExp_f, &cat[Sprintf("(%o) ",u):u in units_f];
-		printf "total transform of w has x^%o y^%o %o\n", xExp_w, yExp_w, &cat[Sprintf("(%o) ",u):u in units_w];;
+		printf "total transform of f has x^%o y^%o %o\n", xExp_f, yExp_f, &cat[Sprintf("(%o)^%o ",u,m):u->m in units_f];
+		printf "total transform of w has x^%o y^%o %o\n", xExp_w, yExp_w, &cat[Sprintf("(%o)^%o ",u,m):u->m in units_w];;
 		printf "\nEnd Blowup\n";
 	end if;
 	
@@ -611,13 +611,13 @@ intrinsic CenterOriginOnCurve(strictTransform_f::RngMPolLocElt, xyExp_fw::[], un
 	end if;
 	
 	//pi := [x, (1-y)/lambda];
-	pi := [x, 1/lambda + y];
+	pi := [P| x, 1/lambda + y];
 	
 	// Change variables of each term, preserve multiplicity
 	// They are units and will be units after change of variables
 	// because the point is free: no common x,y
-	units_f := {* Evaluate(t, pi)^^m : t -> m in units_f *};
-	units_w := {* Evaluate(t, pi)^^m : t -> m in units_w *};
+	units_f := {*P| Evaluate(t, pi)^^m : t -> m in units_f *};
+	units_w := {*P| Evaluate(t, pi)^^m : t -> m in units_w *};
 	
 	// x^xExp * y^yExp -> x^xExp * ((1-y)/lambda)^yExp
 	Include(~units_f, (pi[2])^^yExp_f);

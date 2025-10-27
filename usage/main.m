@@ -1,11 +1,5 @@
 /*
-	Author: Roger Gomez Lopez
-	
-	Computation of examples of stratifications of the Bernstein-Sato polynomial
-	of plane curves, using the residues of the complex zeta function
-	
-	run in background:
-	magma main.m 2>&1 1>err/magma-err.txt &
+	Computation of examples of stratifications of plane branch deformations by the complex zeta function
 */
 
 // ### Basic requirements ###
@@ -14,8 +8,6 @@ AttachSpec("../ZetaFunction/ZetaFunction.spec");
 //import "./testSemigroup.m" : MonomialCurveOptions, DeformationCurveSpecific;
 Z := IntegerRing();
 Q := RationalField();
-
-
 
 // ### Input ###
 
@@ -30,23 +22,21 @@ print_betas         := true;
 print_f             := true;
 printCandidatesLong := false;
 printResults        := false;
-printResultsApij    := true;
+printResultsApij    := true; // only if printResults
 
 // Which set of nus should be used for each rupture divisor
-useDefaultNus       := [true, true];
+useDefaultNus       := [false, false];
 // if not useDefaultNus
-nuChoices           := [[2], [2,3,4,5]];
+nuChoices           := [[11], [4,9]];
 // if useDefaultNus
 includeTopological  := false; // default false
 includeUndeterminedCandidateRoots := true; // default false
 
-
 // Choose curve
 curve               := "deformation_restricted";
 // "deformation_restricted"; "deformation_GroebnerElimination"; "deformation_cassou"; "deformation_cassou_mod";
-// "6-14-43_Artal"; "6-9-22_Artal"; "6-9-22_Artal_mod";
-// "4-6-13"; "6-14-43_AM";
 
+// Curves with coinciding candidates
 // a,b,c pairwise coprime
 a := 4; // a>=2
 b := 5; // b>=a+1
@@ -57,7 +47,10 @@ d := 1; // d>=1, coprime to c
 // 5, 7, 3, 2
 // 17, 19, 7, 6
 //_betas_betas        := [a*c,b*c,a*b*(c+d)]; //[7*4,9*4,7*9*4+7*9*3];
-_betas_betas        := [6,14,43];
+
+_betas_betas        := [15,21,175];
+// [15,21,175];
+// [5,12];
 // [15,21,175];
 // [18,48,146,441];
 // [36,96,292,881];
@@ -71,7 +64,7 @@ _betas_betas        := [6,14,43];
 // [18,45,93,281]; -> 2-5|3-4|3-5 t=[1,73,235] nus=[[], [1,3,4], [2,3,5]]; 
 // [36,96,292,881];
 chosenEqs_betas     := [1, 1]; // choose option for each equation
-parameters_betas    := "[17]"; //"[0,2,95,96,98]"; //"[95,96,98]"; //"[17]"; //"[4,5]"; //"[7]"; //"[32]"; //"[35,36,37,38]"; // "all"; // "[]";
+parameters_betas    := "[2,62]"; //"[0,2,95,96,98]"; //"[95,96,98]"; //"[17]"; //"[4,5]"; //"[7]"; //"[32]"; //"[35,36,37,38]"; // "all"; // "[]";
 assumeNonzero       := {};
 interactive_betas   := false;
 interactive_eqs     := false;

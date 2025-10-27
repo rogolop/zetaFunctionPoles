@@ -4,6 +4,53 @@
 	Formal derivatives, residues of the complex zeta function, helping functions for the changes of variable
 */
 
+intrinsic DiscardVar(f::RngMPolLocElt, discard::SeqEnum) -> RngMPolLocElt
+	{
+		Discard terms with powers higher than x_discardVar^discardPow.
+		discard = [discardVar, discardPow]
+	}
+	return &+[Parent(f)| t : t in Terms(f) | Degree(t,discard[1]) le discard[2]];
+end intrinsic;
+
+
+intrinsic ProductDiscardingVar(f::RngMPolLocElt, g::RngMPolLocElt, discard::SeqEnum) -> RngMPolLocElt
+	{
+		Calculate f*g.
+		Discard terms with powers higher than x_discardVar^discardPow at the result
+	}
+	f := DiscardVar(f, discard);
+	g := DiscardVar(g, discard);
+	return DiscardVar(f*g, discard);
+end intrinsic;
+
+
+intrinsic PowerDiscardingVar(f::RngMPolLocElt, m::RngIntElt, discard::SeqEnum) -> RngMPolLocElt
+	{
+		Calculate f^m. Assuming m>=0.
+		Discard terms with powers higher than x_discardVar^discardPow at the result
+	}
+	P := Parent(f);
+	if (m lt 0) then return P!0; end if;
+	if (m eq 0) then return P!1; end if;
+	
+	// Truncate f at x_discardVar^m where m is too high
+	f := DiscardVar(f, discard);
+	
+	// Compute power (f o g)^m while truncating
+	if (m eq 1) then return f; end if;
+	// f^m = (f^mHalf)^2 * f^parity
+	parity := m mod 2;
+	mHalf := m div 2;
+	fmHalf := PowerDiscardingVar(f, mHalf, discard);
+	fm := fmHalf * fmHalf;
+	fm := DiscardVar(fm, discard);
+	if (parity eq 1) then fm *:= f; end if;
+	fm := DiscardVar(fm, discard);
+	
+	return fm;
+end intrinsic;
+
+
 // Formal derivatives
 
 intrinsic FormalDerivative(F::SeqEnum, indexsF::SetEnum, g::SeqEnum[RngMPolLocElt], xi::RngMPolLocElt) -> SeqEnum, SetEnum
@@ -275,7 +322,7 @@ intrinsic nonconjugateResidue(DPhi_terms::SeqEnum, indexs_DPhi::SetEnum, sigma::
 end intrinsic;
 
 
-intrinsic SimplifiedBasis(Res::[], indexs_Res::{}, P::RngMPolLoc, assumeNonzero::{}) -> []
+intrinsic SimplifiedBasis(Res::[], indexs_Res::{}, P::RngMPolLoc, assumeNonzero::{} : verboseLevel:="default") -> []
 	{
 		Get a simplified basis of polynomials
 	}
@@ -290,8 +337,17 @@ intrinsic SimplifiedBasis(Res::[], indexs_Res::{}, P::RngMPolLoc, assumeNonzero:
 	// Check that the residues have no terms with x,y => residues are in R
 	error if (&or[TotalDegree(res) gt 0 : res in listRes]), "At SimplifiedBasis(Res, indexs_Res, P, assumeNonzero): Res contains x or y\nGiven arguments:", Res, ",", indexs_Res, ",", P, ",", assumeNonzero;
 	listRes := [R| MonomialCoefficient(res, P!1) : res in listRes]; // residues are equal to the constant term in x,y
+	//if verboseLevel in {"detailed"} then print listRes; end if;
 	
 	if Type(R) eq FldFunRat then // R = Q(t_1,...,t_k)
+		if #listRes eq 0 then
+			return [RingOfIntegers(R)| 0];
+		end if;
+		Rpol := RingOfIntegers(R);
+		Q := BaseRing(R);
+		k := Rank(R);
+		l := #assumeNonzero;
+		if verboseLevel in {"detailed"} then print "Clearing nonzero denominators"; end if;
 		// Clear denominators while checking that they are nonzero
 		for idx->res in listRes do
 			denom := Denominator(res);
@@ -305,8 +361,106 @@ intrinsic SimplifiedBasis(Res::[], indexs_Res::{}, P::RngMPolLoc, assumeNonzero:
 			listRes[idx] *:= denom;
 		end for;
 		// Change ring to Q[t_1,...,t_k] and simplify the basis of the ideal
-		ChangeUniverse(~listRes, RingOfIntegers(R));
+		ChangeUniverse(~listRes, Rpol);
+		ChangeUniverse(~assumeNonzero, Rpol);
+		if verboseLevel in {"detailed"} then print listRes; end if;
+		//print "Computing radical";
+		//I := ideal<Rpol| listRes>;
+		//listRes := Basis(Radical(I));
+		//print listRes;
+		if verboseLevel in {"detailed"} then print "Removing factor powers"; end if;
+		listRes := [ &*[Rpol|tup[1]:tup in Factorization(Numerator(res))|tup[1] notin assumeNonzero] : res in listRes];
+		if verboseLevel in {"detailed"} then print listRes; end if;
+		I := ideal<Rpol| listRes>;
+		for h in assumeNonzero do
+			if h in I then
+			//if h in radI then
+				return [Rpol| 1];
+			end if;
+		end for;
+		// listRes := Basis(radI);
+		// listRes := Reduce(listRes);
+		if l gt 0 then
+			//if verboseLevel in {"detailed"} then print "Eliminating nonzeros"; end if;
+			Rext := PolynomialRing(Q,l+k); 
+			AssignNames(~Rext,[Sprintf("z%o",i):i in [1..l]] cat [Sprint(R.i):i in [1..k]]);
+			listResNew       := [Evaluate(h,[Rext| Rext.(l+i):i in [1..k]]) : h in listRes];
+			assumeNonzeroNew := [Evaluate(h,[Rext| Rext.(l+i):i in [1..k]]) : h in assumeNonzero];
+			resIdeal       := ideal<Rext| listResNew>;
+			relationsIdeal := ideal<Rext| [h*Rext.i - 1 : i->h in assumeNonzeroNew]>;
+			I := resIdeal + relationsIdeal;
+			if 1 in I then
+				return [Rpol| 1];
+			end if;
+			//I := EliminationIdeal(I, l);
+			////I := Radical(I);
+			//listRes := Basis(I);
+			//listRes := [Evaluate(res,[0:i in [1..l]]cat[Rpol.i:i in [1..k]]) : res in listRes];
+			//if verboseLevel in {"detailed"} then print listRes; end if;
+			//if verboseLevel in {"detailed"} then print "Removing factor powers"; end if;
+			//listRes := [ &*[Rpol|tup[1]:tup in Factorization(Numerator(res))|tup[1] notin assumeNonzero] : res in listRes];
+			//if verboseLevel in {"detailed"} then print listRes; end if;
+		end if;
+		if verboseLevel in {"detailed"} then print "Reduce"; end if;
 		listRes := Reduce(listRes);
+		if verboseLevel in {"detailed"} then print listRes; end if;
+		if Q eq Rationals() then
+			if verboseLevel in {"detailed"} then print "Simplifying rationals"; end if;
+			// Reduce numerators and denominators as much as possible
+			for resIdx->res in listRes do
+				countsPositive := AssociativeArray();
+				countsNegative := AssociativeArray();
+				coeffs, monoms := CoefficientsAndMonomials(res);
+				for i in [1..#coeffs] do
+					c := coeffs[i];
+					m := monoms[i];
+					// No need to find all factors
+					//factors, sign := Factorization(Numerator(c): Proof:=false, ECMLimit:=0, MPQSLimit:=0);
+					factors := Factorization(Numerator(c) : Proof:=false, Bases:=1, SQUFOFLimit:=0, PollardRhoLimit:=0, ECMLimit:=0, MPQSLimit:=0);
+					//Factorization(Numerator(c) : Proof:=false, Bases:=1, TrialDivisionLimit:=0, SQUFOFLimit:=0, PollardRhoLimit:=0, ECMLimit:=0, MPQSLimit:=0);
+					for tup in factors do
+						factor, exp := Explode(tup);
+						if IsDefined(countsPositive, factor) then
+							Append(~countsPositive[factor], exp);
+						else
+							countsPositive[factor] := [exp];
+						end if;
+					end for;
+					// No need to find all factors
+					//factors, sign := Factorization(Denominator(c): Proof:=false, ECMLimit:=0, MPQSLimit:=0);
+					factors := Factorization(Denominator(c) : Proof:=false, Bases:=1, SQUFOFLimit:=0, PollardRhoLimit:=0, ECMLimit:=0, MPQSLimit:=0);
+					//Factorization(Denominator(c) : Proof:=false, Bases:=1, TrialDivisionLimit:=0, SQUFOFLimit:=0, PollardRhoLimit:=0, ECMLimit:=0, MPQSLimit:=0);
+					for tup in factors do
+						factor, exp := Explode(tup);
+						if IsDefined(countsNegative, factor) then
+							Append(~countsNegative[factor], -exp);
+						else
+							countsNegative[factor] := [-exp];
+						end if;
+					end for;
+					//printf "%o, %o\n", c, m;
+				end for;
+				lengthRes := Length(res);
+				smallHalfLengthRes := lengthRes div 2;
+				bigHalfLengthRes := lengthRes - smallHalfLengthRes;
+				//printf "%o, %o\n", lengthRes, res;
+				for factor in Keys(countsPositive) join Keys(countsNegative) do
+					counts := [];
+					if factor in Keys(countsPositive) then counts cat:= countsPositive[factor]; end if;
+					if factor in Keys(countsNegative) then counts cat:= countsNegative[factor]; end if;
+					N := #counts;
+					//printf "factor %o -> #%o %o", factor, N, counts;
+					if (N gt smallHalfLengthRes) or (lengthRes mod 2 eq 0 and N eq smallHalfLengthRes and counts[N] lt 0)then
+						counts cat:= [0: i in [1..lengthRes-N]];
+						Sort(~counts);
+						medianExp := counts[bigHalfLengthRes];
+						//printf "\n      -> %o, %o", counts, medianExp;
+						if medianExp ne 0 then listRes[resIdx] *:= factor^-medianExp; end if;
+					end if;
+					//printf "\n";
+				end for;
+			end for;
+		end if;
 		return listRes;
 	elif R eq Rationals() then
 		listRes := [R| res : res in listRes | res ne 0];
@@ -437,7 +591,7 @@ intrinsic PrintStratificationAsLatex(L::[[]], nu, sigma, Np)
 end intrinsic;
 
 
-intrinsic ZetaFunctionResidue(arguments::Tup : verboseLevel:="none") -> List, List, List, List, List
+intrinsic ZetaFunctionResidue(arguments::Tup : verboseLevel:="default") -> List, List, List, List, List
 	{
 		Return and print stratification of the residue of the complez zeta function at candidate poles corresponding to nus in rupture divisor r, each one as [[]] which is a sequence of generators of the zero ideal, represented as sequences containing their irreducible factors.
 		
@@ -445,11 +599,35 @@ intrinsic ZetaFunctionResidue(arguments::Tup : verboseLevel:="none") -> List, Li
 	}
 	
 	// Prepare arguments
-	P, xy, pi1, pi2, u, v, lambda, ep, Np, kp, N, k, nus, r, assumeNonzero := Explode(arguments);
+	P, xy, pi1, pi2, strictTransform_f, units_f, units_w, lambda, ep, Np, kp, N, k, nus, r, assumeNonzero := Explode(arguments);
 	
 	x, y := Explode(xy);
 	R := BaseRing(P);
+	
+	nuMax := Max([0] cat nus);
+	nuOld := 0;
+	
+	// Units
+	//u := &*[t^m : t->m in units_f] * strictTransform_f;
+	//v := &*[t^m : t->m in units_w];
+	u := P!1;
+	for t->m in units_f do
+		tm := PowerDiscardingVar(t, m, [1,nuMax]); // t^m
+		u := ProductDiscardingVar(u, tm, [1,nuMax]);
+	end for;
+	u := ProductDiscardingVar(u, strictTransform_f, [1,nuMax]);
+	v := P!1;
+	for t->m in units_w do
+		tm := PowerDiscardingVar(t, m, [1,nuMax]); // t^m
+		v := ProductDiscardingVar(v, tm, [1,nuMax]);
+	end for;
+	
+	// u1
 	u /:= Evaluate(u, [0,0]);
+	
+	// pi
+	pi1 := DiscardVar(pi1, [1,nuMax]);
+	pi2 := DiscardVar(pi2, [1,nuMax]);
 	
 	// Formal v(x,y) * phi(X,Y) * Z^s, to be evaluated at X=pi1, Y=pi2, Z=u
 	Phi := [[[v]]];
@@ -461,9 +639,6 @@ intrinsic ZetaFunctionResidue(arguments::Tup : verboseLevel:="none") -> List, Li
 	indexs_Res_all := [**];
 	sigma_all := [**];
 	epsilon_all := [**];
-	
-	nuMax := Max([0] cat nus);
-	nuOld := 0;
 	
 	for nu in nus do
 		//repeat // Do once, but group statements to calculate time easily
@@ -517,7 +692,7 @@ intrinsic ZetaFunctionResidue(arguments::Tup : verboseLevel:="none") -> List, Li
 			end if;
 			
 			// Basis of the ideal whose roots make the residue =0
-			L := SimplifiedBasis(Res, indexs_Res, P, assumeNonzero);
+			L := SimplifiedBasis(Res, indexs_Res, P, assumeNonzero : verboseLevel:=verboseLevel);
 			
 			// Storage
 			Append(~L_all, L);
@@ -540,14 +715,6 @@ end intrinsic;
 
 // Changes of variables
 
-intrinsic DiscardHigherPow(f, var, pow::RngIntElt) -> Any
-	{
-		Discard terms with powers of var higher than var^pow
-	}
-	return &+[Parent(f) | t : t in Terms(f) | Degree(t, var) le pow];
-end intrinsic;
-
-
 intrinsic Evaluate(f::FldFunRatMElt, i::RngIntElt, r::RngElt) -> FldFunRatMElt
 	{
 		Evaluate a multivariate rational function in x_i=r
@@ -569,6 +736,7 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 	debugPrint := false;
 	
 	// Prepare arguments
+	if verboseLevel notin {"none","default","onlyStrata","detailed"} then verboseLevel:="default"; end if;
 	P<x,y> := Parent(f);
 	R := BaseRing(P);
 	if #planeBranchNumbers eq 0 then // if not provided
@@ -584,7 +752,7 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 	if Type(R) eq FldFunRat then
 		assumeNonzero := {RingOfIntegers(R)| tup[1] : tup in Factorization(Numerator(h)) cat Factorization(Denominator(h)), h in assumeNonzero};
 	end if;
-	if verboseLevel in {"default", "detailed"} then printf "assumeNonzero =\n"; print assumeNonzero; end if;
+	if verboseLevel in {"detailed"} then printf "assumeNonzero =\n"; print assumeNonzero; end if;
 	//error if &or[g notin RingOfIntegers(R) : g in assumeNonzero], "At ZetaFunctionStratification(): assumeNonzero contains elements with denominators";
 	
 	// (total transform of f) = x^xExp_f * y^yExp_f * units_f * strictTransform_f
@@ -592,8 +760,8 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 	strictTransform_f := f;
 	xyExp_f := [0,0];
 	xyExp_w := [0,0];
-	units_f := {* P!1 *};
-	units_w := {* P!1 *};
+	units_f := {*P| 1 *};
+	units_w := {*P| 1 *};
 	pointType := 0; // 0 -> starting point, 1 -> free point, 2 -> satellite point
 	PI_TOTAL := [x, y]; // Total blowup morphism since starting point
 	L_all := [**];
@@ -604,6 +772,7 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 	
 	// ### For each rupture divisor ###
 	// Non-rupture divisors don't contribute (see TFG-Roger, p.28, Cor.4.2.5 or PHD-Guillem p.87 Th.8.10)
+	if (verboseLevel in {"default", "onlyStrata", "detailed"}) then printf "\n"; end if;
 	for r in [1..g] do
 		if (verboseLevel in {"default", "onlyStrata", "detailed"}) then
 			printf "_______________________________________________________________________\n";
@@ -619,12 +788,9 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 			printf "lambda = %o\n", lambda;
 		end if;
 		
-		ep := es[r];
+		ep := es[r+1];
 		// Total blowup morphism since starting point
 		PI_TOTAL := [Evaluate(t, PI_blowup) : t in PI_TOTAL];
-		// Units
-		u := &*[t^m : t->m in units_f] * strictTransform_f;
-		v := &*[t^m : t->m in units_w];
 		// Multiplicities of rupture divisor x=0
 		Np := xyExp_f[1];
 		Kp := xyExp_w[1];
@@ -637,6 +803,17 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 		// 3) the curve
 		N := [N1, Np-N1-ep, ep];
 		k := [K1, Kp-K1-1, 0];
+		if debugPrint then
+			printf "strict = %o \n", strictTransform_f;
+		end if;
+		if (verboseLevel in {"detailed"}) then
+			printf "ep = %o \n", ep;
+			printf "es = %o \n", es;
+			printf "Np = %o, Nps[r] = %o\n", Np, Nps[r];
+			printf "N = %o, Ns[r] = %o\n", N, Ns[r];
+			printf "Kp = %o, kps[r] = %o\n", Kp, kps[r];
+			printf "k = %o, ks[r] = %o\n", k, ks[r];
+		end if;
 		
 		// printf "u = %o\n\n", u;
 		// printf "v = %o\n\n", v;
@@ -650,7 +827,7 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 			printf "nus = %o\n\n", nuChoices[r];
 		end if;
 		
-		L_all[r], Res_all[r], indexs_Res_all[r], sigma_all[r], epsilon_all[r] := ZetaFunctionResidue(< P, [x,y], PI_TOTAL[1], PI_TOTAL[2], u, v, lambda, ep, Np, Kp, N, k, nus, r, assumeNonzero > : verboseLevel:=verboseLevel);
+		L_all[r], Res_all[r], indexs_Res_all[r], sigma_all[r], epsilon_all[r] := ZetaFunctionResidue(< P, [x,y], PI_TOTAL[1], PI_TOTAL[2], strictTransform_f, units_f, units_w, lambda, ep, Np, Kp, N, k, nus, r, assumeNonzero > : verboseLevel:=verboseLevel);
 		
 		// Prepare next iteration
 		if r lt g then
