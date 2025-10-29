@@ -17,15 +17,15 @@ quitWhenFinished    := true;
 // Print settings
 // Output format: "table", "CSV", "Latex", "none"
 printType           := "table";
-verboseLevel        := "default"; // "none", "default", "onlyStrata", or "detailed"
+verboseLevel        := "detailed"; // "none", "default", "onlyStrata", or "detailed"
 print_betas         := true;
 print_f             := true;
 printCandidatesLong := false;
-printResults        := false;
+printResults        := true;
 printResultsApij    := true; // only if printResults
 
 // Which set of nus should be used for each rupture divisor
-useDefaultNus       := [false, false];
+useDefaultNus       := [true, true];
 // if not useDefaultNus
 nuChoices           := [[11], [4,9]];
 // if useDefaultNus
@@ -48,7 +48,7 @@ d := 1; // d>=1, coprime to c
 // 17, 19, 7, 6
 //_betas_betas        := [a*c,b*c,a*b*(c+d)]; //[7*4,9*4,7*9*4+7*9*3];
 
-_betas_betas        := [15,21,175];
+_betas_betas        := [6,14,43];
 // [15,21,175];
 // [5,12];
 // [15,21,175];
@@ -64,7 +64,7 @@ _betas_betas        := [15,21,175];
 // [18,45,93,281]; -> 2-5|3-4|3-5 t=[1,73,235] nus=[[], [1,3,4], [2,3,5]]; 
 // [36,96,292,881];
 chosenEqs_betas     := [1, 1]; // choose option for each equation
-parameters_betas    := "[2,62]"; //"[0,2,95,96,98]"; //"[95,96,98]"; //"[17]"; //"[4,5]"; //"[7]"; //"[32]"; //"[35,36,37,38]"; // "all"; // "[]";
+parameters_betas    := "all"; //"[2,62]"; //"[0,2,95,96,98]"; //"[95,96,98]"; //"[17]"; //"[4,5]"; //"[7]"; //"[32]"; //"[35,36,37,38]"; // "all"; // "[]";
 assumeNonzero       := {};
 interactive_betas   := false;
 interactive_eqs     := false;

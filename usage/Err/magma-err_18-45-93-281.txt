@@ -1,7 +1,0 @@
-Magma V2.27-7     Wed Nov  1 2023 17:23:42 on emmy     [Seed = 1867020728]
-Type ? for help.  Type <Ctrl>-D to quit.
-
-Loading file "main.m"
-Printed to: output/out_18-45-93-281.txt
-
-Total time: 133.430 seconds, Total memory usage: 720.53MB

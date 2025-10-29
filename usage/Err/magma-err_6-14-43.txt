@@ -1,4 +1,0 @@
-Magma V2.27-7     Sun Oct 22 2023 21:27:30 on emmy     [Seed = 2262217404]
-Type ? for help.  Type <Ctrl>-D to quit.
-
-Loading file "main.m"
