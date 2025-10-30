@@ -17,17 +17,17 @@ quitWhenFinished    := true;
 // Print settings
 // Output format: "table", "CSV", "Latex", "none"
 printType           := "table";
-verboseLevel        := "detailed"; // "none", "default", "onlyStrata", or "detailed"
+verboseLevel        := "default"; // "none", "default", "onlyStrata", or "detailed"
 print_betas         := true;
 print_f             := true;
 printCandidatesLong := false;
 printResults        := true;
-printResultsApij    := true; // only if printResults
+printResultsApij    := false; // only if printResults
 
 // Which set of nus should be used for each rupture divisor
 useDefaultNus       := [true, true];
 // if not useDefaultNus
-nuChoices           := [[11], [4,9]];
+nuChoices           := [[], []]; //[[11], [4,9]];
 // if useDefaultNus
 includeTopological  := false; // default false
 includeUndeterminedCandidateRoots := true; // default false
@@ -64,7 +64,7 @@ _betas_betas        := [6,14,43];
 // [18,45,93,281]; -> 2-5|3-4|3-5 t=[1,73,235] nus=[[], [1,3,4], [2,3,5]]; 
 // [36,96,292,881];
 chosenEqs_betas     := [1, 1]; // choose option for each equation
-parameters_betas    := "all"; //"[2,62]"; //"[0,2,95,96,98]"; //"[95,96,98]"; //"[17]"; //"[4,5]"; //"[7]"; //"[32]"; //"[35,36,37,38]"; // "all"; // "[]";
+parameters_betas    := "all"; //"[1,73,235]"; //"[2,62]"; //"[0,2,95,96,98]"; //"[95,96,98]"; //"[17]"; //"[4,5]"; //"[7]"; //"[32]"; //"[35,36,37,38]"; // "all"; // "[]";
 assumeNonzero       := {};
 interactive_betas   := false;
 interactive_eqs     := false;
@@ -640,6 +640,13 @@ case curve:
 		P<x,y> := LocalPolynomialRing(Q, 2);
 		R := BaseRing(P);
 		f := y^5 - x^12 + x^5*y^3 + (3/10)*x^10*y;
+		
+	when "18-45-93-281":
+		P<x,y> := LocalPolynomialRing(Q, 2);
+		R := BaseRing(P);
+		t0 := 1;
+		t72 := 1;
+		f := x^45 - 9*x^40*y^2 + 36*x^35*y^4 - 3*t0^3*x^33*y^5 - 84*x^30*y^6 + 18*t0^3*x^28*y^7 + 126*x^25*y^8 + t0^4*t72^3*x^26*y^8 - 45*t0^3*x^23*y^9 - 126*x^20*y^10 + (3*t0^6 - 5*t0^4*t72^3)*x^21*y^10 + 60*t0^3*x^18*y^11 + 84*x^15*y^12 + (-9*t0^6 + 10*t0^4*t72^3)*x^16*y^12 - 45*t0^3*x^13*y^13 - 36*x^10*y^14 + (9*t0^6 - 10*t0^4*t72^3)*x^11*y^14 + 18*t0^3*x^8*y^15 - t0^9*x^9*y^15 + 9*x^5*y^16 + (-3*t0^6 + 5*t0^4*t72^3)*x^6*y^16 - 3*t0^3*x^3*y^17 - y^18 - t0^4*t72^3*x*y^18;
 
 	when "deformation_restricted": // Generic curve construction  
 		// INPUT
@@ -1627,6 +1634,15 @@ elif (printType eq "Latex") then
 	if print_f then printf "f = %o\n\n", f; end if;
 end if;
 
+// Numerical invariants
+if originalCurveString in {"deformation_restricted", "deformation_GroebnerElimination", "deformation_cassou", "deformation_cassou_mod"} then
+	_betas := _betas_betas;
+else
+	_betas := SemiGroup(f); // minimal set of generators of the semigroup
+end if;
+planeBranchNumbers := PlaneBranchNumbers(_betas);
+g, c, betas, es, ms, ns, qs, _betas, _ms, Nps, kps, Ns, ks := Explode(planeBranchNumbers);
+
 // print proximity matrix
 printf "Proximity:\n";
 proxMat := ProximityMatrix(_betas : ExtraPoint:=true);
@@ -1666,15 +1682,6 @@ for row in [1..proxMatSize] do
 end for;
 printf "\n";
 
-
-// Numerical invariants
-if originalCurveString in {"deformation_restricted", "deformation_GroebnerElimination", "deformation_cassou", "deformation_cassou_mod"} then
-	_betas := _betas_betas;
-else
-	_betas := SemiGroup(f); // minimal set of generators of the semigroup
-end if;
-planeBranchNumbers := PlaneBranchNumbers(_betas);
-g, c, betas, es, ms, ns, qs, _betas, _ms, Nps, kps, Ns, ks := Explode(planeBranchNumbers);
 
 // Candidates
 nusForPoleCandidates, nusForRootCandidatesIncludingUndetermined, nusIncludingTopological, trueNonTopSigmas, coincidingTopAndNonTopSigmas, otherTopologicalSigmas, nonTopSigmaToIndexList, topologicalSigmaToIndexList, trueNonTopSigmasCoincidences, otherTopologicalSigmasCoincidences := CandidatesData(planeBranchNumbers);
