@@ -1,80 +1,59 @@
 /*
-	Computation of examples of stratifications of plane branch deformations by the complex zeta function
+	Stratification of mu-constant plane branch deformations by the poles of the complex zeta function
 */
 
-// ### Basic requirements ###
+//##########################
+//### Basic requirements
+//##########################
 AttachSpec("../SingularitiesDim2/IntegralClosureDim2.spec");
 AttachSpec("../ZetaFunction/ZetaFunction.spec");
-//import "./testSemigroup.m" : MonomialCurveOptions, DeformationCurveSpecific;
-Z := IntegerRing();
-Q := RationalField();
+Z := IntegerRing(); Q := RationalField();
 
-// ### Input ###
+//######################
+//### Input/settings
+//######################
 
-// Whether Magma should quit when the calculations are finished
-quitWhenFinished    := true;
+quitWhenFinished        := true;
+printDeformationProcess := true;
+printCandidatesLong     := false;
+verboseLevel            := "default";    // How much to pring during call to ZetaFunctionStratification(): "none", "default", "onlyStrata", "detailed"
+printResults            := true;         // Print the stratification after the calculations have finished
+printResultsApij        := false;        // Print the Apij apart from the simplified stratification ideals (only used if printResults)
 
-// Print settings
-// Output format: "table", "CSV", "Latex", "none"
-printType           := "table";
-verboseLevel        := "default"; // "none", "default", "onlyStrata", or "detailed"
-print_betas         := true;
-print_f             := true;
-printCandidatesLong := false;
-printResults        := true;
-printResultsApij    := false; // only if printResults
+// Candidates
+useDefaultNus           := [true, true]; // Set of candidates for each rupture divisor
+nuChoices               := [[], []];     // For each rupture divisor which nus to use (only used if not useDefaultNus)
+includeTopological      := false;        // Whether to include as candidates the known topological poles/roots of geometric origin (default false, only used if useDefaultNus)
+includeUndetermined     := true;         // Whether to include the candidates that coincide with a pole/root of geometric origin but whose nu is not in the corresponding semigroup (default false, only used if useDefaultNus)
 
-// Which set of nus should be used for each rupture divisor
-useDefaultNus       := [true, true];
-// if not useDefaultNus
-nuChoices           := [[], []]; //[[11], [4,9]];
-// if useDefaultNus
-includeTopological  := false; // default false
-includeUndeterminedCandidateRoots := true; // default false
+curve                   := "deformation_restricted"; // Choose the curve/deformation 
 
-// Choose curve
-curve               := "deformation_restricted";
-// "deformation_restricted"; "deformation_GroebnerElimination"; "deformation_cassou"; "deformation_cassou_mod";
-
-// Curves with coinciding candidates
-// a,b,c pairwise coprime
-a := 4; // a>=2
-b := 5; // b>=a+1
-c := 7; // c>=2
-d := 1; // d>=1, coprime to c
-// 4, 5, 7, 1
-// 3, 8, 7, 1
-// 5, 7, 3, 2
-// 17, 19, 7, 6
-//_betas_betas        := [a*c,b*c,a*b*(c+d)]; //[7*4,9*4,7*9*4+7*9*3];
-
-_betas_betas        := [6,14,43];
-// [15,21,175];
-// [5,12];
-// [15,21,175];
-// [18,48,146,441];
-// [36,96,292,881];
-// [5,7];
-// [6,17];
-// [4,6,13]; [4,10,21]; [6,9,22]; [6,14,43]; [8,18,73]; [10,15,36]; [10,24,121];
+// Semigroup (only if curve is "deformation_restricted", "deformation_GroebnerElimination", "deformation_cassou", or "deformation_cassou_mod")
+semigroup               := [6,14,43];
+// [15,21,175]; [5,12]; [15,21,175]; [18,48,146,441]; [36,96,292,881]; [5,7]; [6,17]; [4,6,13]; [4,10,21]; [6,9,22]; [6,14,43]; [8,18,73]; [10,15,36]; [10,24,121];
 // [8,12,26,53];   -> 2-3|2-3|2-3
 // [12,16,50,101]; -> 3-4|2-3|2-3
 // [12,18,38,115]; -> 2-3|3-4|2-3
 // [12,18,39,79];  -> 2-3|2-3|3-4
 // [18,45,93,281]; -> 2-5|3-4|3-5 t=[1,73,235] nus=[[], [1,3,4], [2,3,5]]; 
 // [36,96,292,881];
-chosenEqs_betas     := [1, 1]; // choose option for each equation
-parameters_betas    := "all"; //"[1,73,235]"; //"[2,62]"; //"[0,2,95,96,98]"; //"[95,96,98]"; //"[17]"; //"[4,5]"; //"[7]"; //"[32]"; //"[35,36,37,38]"; // "all"; // "[]";
-assumeNonzero       := {};
-interactive_betas   := false;
-interactive_eqs     := false;
-interactive_params  := false;
+// Curves with coinciding candidates: a>=2, b>=a+1, c>=2, {a,b,c} pairwise coprime, d>=1, {c,d} coprime
+abcd := [4,5,7,1]; // [4,5,7,1]; [3,8,7,1]; [5,7,3,2]; [17,19,7,6]; [7,9,4,3];
+//a,b,c,d := Explode(abcd); semigroup := [a*c,b*c,a*b*(c+d)];
+
+// Deformation settings (only if curve is "deformation_restricted", "deformation_GroebnerElimination", "deformation_cassou", or "deformation_cassou_mod")
+whichEquations          := [1, 1]; // If there are multiple equation options for each rupture divisor, which to choose
+deformationParameters   := "all"; //[1,73,235]; //[2,62]; //[0,2,95,96,98]; //[95,96,98]; //[17]; //[4,5]; //[7]; //[32]; //[35,36,37,38]; // "all"; // [];
 
 
 
 
+//#########################
+//### Curve/deformation
+//#########################
 
 originalCurveString := curve;
+assumeNonzero := {};
 // Definition of:
 //   - R: the base ring
 //   - P = R[x,y]
@@ -648,25 +627,17 @@ case curve:
 		t72 := 1;
 		f := x^45 - 9*x^40*y^2 + 36*x^35*y^4 - 3*t0^3*x^33*y^5 - 84*x^30*y^6 + 18*t0^3*x^28*y^7 + 126*x^25*y^8 + t0^4*t72^3*x^26*y^8 - 45*t0^3*x^23*y^9 - 126*x^20*y^10 + (3*t0^6 - 5*t0^4*t72^3)*x^21*y^10 + 60*t0^3*x^18*y^11 + 84*x^15*y^12 + (-9*t0^6 + 10*t0^4*t72^3)*x^16*y^12 - 45*t0^3*x^13*y^13 - 36*x^10*y^14 + (9*t0^6 - 10*t0^4*t72^3)*x^11*y^14 + 18*t0^3*x^8*y^15 - t0^9*x^9*y^15 + 9*x^5*y^16 + (-3*t0^6 + 5*t0^4*t72^3)*x^6*y^16 - 3*t0^3*x^3*y^17 - y^18 - t0^4*t72^3*x*y^18;
 
+
 	when "deformation_restricted": // Generic curve construction  
 		// INPUT
-		if (interactive_betas) then
-			print "\nINPUT: Choose curve semigroup";
-			print "Examples: [6,14,43]";
-			read _betas, "INPUT>";
-			error if (_betas eq ""), "Please define a valid curve semigroup";
-			_betas := eval _betas;
-			error if (ExtendedType(_betas) ne SeqEnum[RngIntElt]), "Please define a valid curve semigroup";
-		else
-			_betas := _betas_betas;
-		end if;
-		error if (not IsPlaneCurveSemiGroup(_betas)), "Please define a valid curve semigroup, given input is not a plane curve semigroup";
+		_betas := semigroup;
+		error if (not IsPlaneCurveSemiGroup(_betas)), "Please define a valid plane branch semigroup. Given: ", _betas;
 		
 		// Name
 		curve := &*[Sprint(_b)*"-" : _b in _betas];
 		curve := curve[1..#curve-1];
 		
-		if (print_betas) then print "Semigroup:", _betas; end if;
+		if printDeformationProcess then print "Semigroup:", _betas; end if;
 		
 		// Topological information
 		//semiGroupInfo := SemiGroupInfo(_betas);
@@ -676,7 +647,7 @@ case curve:
 		
 		// Choice of monomial curve equations and their deformations
 		eqs := allMonomialCurves(_betas); // [ [i-th equation options] ]
-		if (print_betas) then
+		if printDeformationProcess then
 			print "Possible undeformed equations in space:";
 			for i in [1..#_betas-1] do
 				printf "Equation %o options:\n", i;
@@ -684,24 +655,14 @@ case curve:
 			end for;
 		end if;
 		// INPUT
-		chosenEqs := [];
-		if (interactive_eqs) then
-			print "\nINPUT: equation indexes";
-			print "Examples: [1,1]";
-			read chosenEqs, "INPUT>";
-			error if (chosenEqs eq ""), "Please define a valid list of equation indexes";
-			chosenEqs := eval chosenEqs;
-		else
-			chosenEqs := chosenEqs_betas;
-		end if;
-		error if (ExtendedType(chosenEqs) ne SeqEnum[RngIntElt]), "Please define a valid list of equation indexes";
-		error if (#chosenEqs lt (#_betas-1)), "Please define a valid list of equation indexes, # of indexes too small";
-		chosenEqs := chosenEqs[1..g];
-		error if (&or[ (eqIdx le 0) or (eqIdx gt #(eqs[i])) : i -> eqIdx in chosenEqs ]), "Please define a valid list of equation indexes, index out of bounds";
-		monomialCurve := [eqs[i, chosenEqs[i]] : i in [1..#_betas-1]]; // Select the chosen equations
-		if (print_betas) then print "Chosen equation indexes:", chosenEqs; end if;
-		if (print_betas) then print "Chosen equations:"; end if;
-		if (print_betas) then print monomialCurve; end if;
+		error if (ExtendedType(whichEquations) ne SeqEnum[RngIntElt]), "Please define a valid list of equation indexes";
+		error if (#whichEquations lt (#_betas-1)), "Please define a valid list of equation indexes, # of indexes too small";
+		whichEquations := whichEquations[1..g];
+		error if (&or[ (eqIdx le 0) or (eqIdx gt #(eqs[i])) : i -> eqIdx in whichEquations ]), "Please define a valid list of equation indexes, index out of bounds";
+		monomialCurve := [eqs[i, whichEquations[i]] : i in [1..#_betas-1]]; // Select the chosen equations
+		if printDeformationProcess then print "Chosen equation indexes:", whichEquations; end if;
+		if printDeformationProcess then print "Chosen equations:"; end if;
+		if printDeformationProcess then print monomialCurve; end if;
 		
 		// Deform the chosen monomial curve equations
 		Deformation := DeformationCurveSpecific(monomialCurve, _betas);
@@ -731,14 +692,14 @@ case curve:
 				completeDeformation := false;
 			end if;
 		end for;
-		if (print_betas) then
+		if printDeformationProcess then
 			print "Can use complete deformation:", completeDeformation;
 			print "Usable deformation:";
 			print Deformation;
 		end if;
 		
 		// Determine, separate and show the needed and optional deformation parameters
-		if (print_betas) then print "Parameters:"; end if;
+		if printDeformationProcess then print "Parameters:"; end if;
 		neededParams := []; // parameter needed at each Hi
 		optionalParams := []; // [ [optional parameters for Hi] ]
 		// Parameters of H_1, ..., H_{g-1}
@@ -763,7 +724,7 @@ case curve:
 				end if;
 			end for;
 			Sort(~optionalParams[i]);
-			if (print_betas) then printf "    Optional at E%o: %o\n", i, optionalParams[i]; end if;
+			if printDeformationProcess then printf "    Optional at E%o: %o\n", i, optionalParams[i]; end if;
 		end for;
 		// H_g treated separately, no neededParams
 		// H_g = h_g(u_0,...,u_g) + sum_r( t_?*phi_{r,g}(u_0,...,u_g) )
@@ -781,7 +742,7 @@ case curve:
 			end for;
 		end for;
 		Sort(~optionalParams[g]);
-		if (print_betas) then
+		if printDeformationProcess then
 			printf "    Optional at E%o: %o\n", g, optionalParams[g];
 			for i in [1..g-1] do
 				printf "    Needed at E%o: %o\n", i, neededParams[i];
@@ -791,28 +752,19 @@ case curve:
 		
 		// Choose deformation parameters
 		// INPUT
-		if (interactive_params) then
-			print "\nINPUT: Choose optional parameters";
-			print "Examples: [1,2,3]";
-			print "          all";
-			read parameters, "INPUT>";
-		else
-			parameters := parameters_betas;
-		end if;
+		parameters := deformationParameters;
 		if parameters eq "all" then
 			parameters := optionalParams;
 		else
-			error if (parameters eq ""), "Please define a valid list of parameters, empty input";
-			parameters := eval parameters;
-			error if ((ExtendedType(parameters) ne SeqEnum[RngIntElt]) and (parameters ne [])), "Please define a valid list of parameters, given not a sequence of integers";
+			error if ((ExtendedType(parameters) ne SeqEnum[RngIntElt]) and (parameters ne [])), "Please define a valid list of parameters. Given ", parameters;
 			for p in parameters do
-				error if ((p notin optionalParams) and (p notin neededParams)), "Please define a valid list of parameters, given invalid parameter";
+				error if ((p notin optionalParams) and (p notin neededParams)), "Please define a valid list of parameters. Given invalid parameter ", p;
 			end for;
 		end if;
 		parameters cat:= neededParams; // neededParams always have to be included
 		parameters := [p : p in Set(parameters)]; // remove duplicates
 		Sort(~parameters);
-		if (print_betas) then printf "Chosen parameters: %o\n", parameters; end if;
+		if printDeformationProcess then printf "Chosen parameters: %o\n", parameters; end if;
 		// Create structures with the new number of parameters
 		newT := #parameters; // (temp variable) updated # of parameters (t_0, ..., t_{newT-1})
 		PDeformation := LocalPolynomialRing(Q, newT+(g+1)); // polynomial ring with updated # of parameters
@@ -833,15 +785,10 @@ case curve:
 		delete newT; // (delete temp variable)
 		totalDim := T + g+1; // Update total dimension
 		// Set parameter and variable names
-		if (printType eq "Latex") then
-			tNames := ["t_{"*Sprint(i)*"}" : i in parameters ];
-			uNames := ["u_{"*Sprint(i)*"}" : i in [0..g] ];
-		else
-			tNames := ["t"*Sprint(i) : i in parameters ];
-			uNames := ["u"*Sprint(i) : i in [0..g] ];
-		end if;
+		tNames := ["t"*Sprint(i) : i in parameters ];
+		uNames := ["u"*Sprint(i) : i in [0..g] ];
 		AssignNames(~PDeformation, tNames cat uNames);
-		if (print_betas) then
+		if printDeformationProcess then
 			print "Chosen deformation:";
 			print Deformation;
 		end if;
@@ -887,11 +834,7 @@ case curve:
 		else
 			P<x,y> := LocalPolynomialRing(RationalFunctionField(Q, T), 2);
 			R := BaseRing(P);
-			if (printType eq "Latex") then
-				tNames := ["t_{"*Sprint(i)*"}" : i in parameters ];
-			else
-				tNames := ["t"*Sprint(i) : i in parameters ]; // in [1..T]
-			end if;
+			tNames := ["t"*Sprint(i) : i in parameters ]; // in [1..T]
 			AssignNames(~R, tNames);
 			ts := [P | R.i : i in [1..T]];
 		end if;
@@ -913,23 +856,14 @@ case curve:
 
 	when "deformation_GroebnerElimination": // Generic curve construction  
 		// INPUT
-		if (interactive_betas) then
-			print "\nINPUT: Choose curve semigroup";
-			print "Examples: [6,14,43]";
-			read _betas, "INPUT>";
-			error if (_betas eq ""), "Please define a valid curve semigroup";
-			_betas := eval _betas;
-			error if (ExtendedType(_betas) ne SeqEnum[RngIntElt]), "Please define a valid curve semigroup";
-		else
-			_betas := _betas_betas;
-		end if;
-		error if (not IsPlaneCurveSemiGroup(_betas)), "Please define a valid curve semigroup, given input is not a plane curve semigroup";
+		_betas := semigroup;
+		error if (not IsPlaneCurveSemiGroup(_betas)), "Please define a valid plane branch semigroup. Given: ", _betas;
 		
 		// Name
 		curve := &*[Sprint(_b)*"-" : _b in _betas];
 		curve := curve[1..#curve-1];
 		
-		if (print_betas) then print "Semigroup:", _betas; end if;
+		if printDeformationProcess then print "Semigroup:", _betas; end if;
 		
 		// Topological information
 		//semiGroupInfo := SemiGroupInfo(_betas);
@@ -939,7 +873,7 @@ case curve:
 		
 		// Choice of monomial curve equations and their deformations
 		eqs := allMonomialCurves(_betas); // [ [i-th equation options] ]
-		if (print_betas) then
+		if printDeformationProcess then
 			print "Possible undeformed equations in space:";
 			for i in [1..#_betas-1] do
 				printf "Equation %o options:\n", i;
@@ -947,24 +881,14 @@ case curve:
 			end for;
 		end if;
 		// INPUT
-		chosenEqs := [];
-		if (interactive_eqs) then
-			print "\nINPUT: equation indexes";
-			print "Examples: [1,1]";
-			read chosenEqs, "INPUT>";
-			error if (chosenEqs eq ""), "Please define a valid list of equation indexes";
-			chosenEqs := eval chosenEqs;
-		else
-			chosenEqs := chosenEqs_betas;
-		end if;
-		error if (ExtendedType(chosenEqs) ne SeqEnum[RngIntElt]), "Please define a valid list of equation indexes";
-		error if (#chosenEqs lt (#_betas-1)), "Please define a valid list of equation indexes, # of indexes too small";
-		chosenEqs := chosenEqs[1..g];
-		error if (&or[ (eqIdx le 0) or (eqIdx gt #(eqs[i])) : i -> eqIdx in chosenEqs ]), "Please define a valid list of equation indexes, index out of bounds";
-		monomialCurve := [eqs[i, chosenEqs[i]] : i in [1..#_betas-1]]; // Select the chosen equations
-		if (print_betas) then print "Chosen equation indexes:", chosenEqs; end if;
-		if (print_betas) then print "Chosen equations:"; end if;
-		if (print_betas) then print monomialCurve; end if;
+		error if (ExtendedType(whichEquations) ne SeqEnum[RngIntElt]), "Please define a valid list of equation indexes";
+		error if (#whichEquations lt (#_betas-1)), "Please define a valid list of equation indexes, # of indexes too small";
+		whichEquations := whichEquations[1..g];
+		error if (&or[ (eqIdx le 0) or (eqIdx gt #(eqs[i])) : i -> eqIdx in whichEquations ]), "Please define a valid list of equation indexes, index out of bounds";
+		monomialCurve := [eqs[i, whichEquations[i]] : i in [1..#_betas-1]]; // Select the chosen equations
+		if printDeformationProcess then print "Chosen equation indexes:", whichEquations; end if;
+		if printDeformationProcess then print "Chosen equations:"; end if;
+		if printDeformationProcess then print monomialCurve; end if;
 		
 		// Deform the chosen monomial curve equations
 		Deformation := DeformationCurveSpecific(monomialCurve, _betas);
@@ -975,7 +899,7 @@ case curve:
 		T := totalDim-(g+1); // # of parameters (t_0, ..., t_{T-1})
 		
 		// Determine, separate and show the needed and optional deformation parameters
-		if (print_betas) then print "Parameters:"; end if;
+		if printDeformationProcess then print "Parameters:"; end if;
 		neededParams := []; // parameter needed at each Hi
 		optionalParams := []; // [ [optional parameters for Hi] ]
 		// Parameters of H_1, ..., H_{g-1}
@@ -1000,7 +924,7 @@ case curve:
 				end if;
 			end for;
 			Sort(~optionalParams[i]);
-			if (print_betas) then printf "    Optional at E%o: %o\n", i, optionalParams[i]; end if;
+			if printDeformationProcess then printf "    Optional at E%o: %o\n", i, optionalParams[i]; end if;
 		end for;
 		// H_g treated separately, no neededParams
 		// H_g = h_g(u_0,...,u_g) + sum_r( t_?*phi_{r,g}(u_0,...,u_g) )
@@ -1018,7 +942,7 @@ case curve:
 			end for;
 		end for;
 		Sort(~optionalParams[g]);
-		if (print_betas) then
+		if printDeformationProcess then
 			printf "    Optional at E%o: %o\n", g, optionalParams[g];
 			for i in [1..g-1] do
 				printf "    Needed at E%o: %o\n", i, neededParams[i];
@@ -1028,28 +952,19 @@ case curve:
 		
 		// Choose deformation parameters
 		// INPUT
-		if (interactive_params) then
-			print "\nINPUT: Choose optional parameters";
-			print "Examples: [1,2,3]";
-			print "          all";
-			read parameters, "INPUT>";
-		else
-			parameters := parameters_betas;
-		end if;
+		parameters := deformationParameters;
 		if parameters eq "all" then
 			parameters := optionalParams;
 		else
-			error if (parameters eq ""), "Please define a valid list of parameters, empty input";
-			parameters := eval parameters;
-			error if ((ExtendedType(parameters) ne SeqEnum[RngIntElt]) and (parameters ne [])), "Please define a valid list of parameters, given not a sequence of integers";
+			error if ((ExtendedType(parameters) ne SeqEnum[RngIntElt]) and (parameters ne [])), "Please define a valid list of parameters. Given ", parameters;
 			for p in parameters do
-				error if ((p notin optionalParams) and (p notin neededParams)), "Please define a valid list of parameters, given invalid parameter";
+				error if ((p notin optionalParams) and (p notin neededParams)), "Please define a valid list of parameters. Given invalid parameter ", p;
 			end for;
 		end if;
 		parameters cat:= neededParams; // neededParams always have to be included
 		parameters := [p : p in Set(parameters)]; // remove duplicates
 		Sort(~parameters);
-		if (print_betas) then printf "Chosen parameters: %o\n", parameters; end if;
+		if printDeformationProcess then printf "Chosen parameters: %o\n", parameters; end if;
 		// Create structures with the new number of parameters
 		newT := #parameters; // (temp variable) updated # of parameters (t_0, ..., t_{newT-1})
 		PDeformation := LocalPolynomialRing(Q, newT+(g+1)); // polynomial ring with updated # of parameters
@@ -1070,15 +985,10 @@ case curve:
 		delete newT; // (delete temp variable)
 		totalDim := T + g+1; // Update total dimension
 		// Set parameter and variable names
-		if (printType eq "Latex") then
-			tNames := ["t_{"*Sprint(i)*"}" : i in parameters ];
-			uNames := ["u_{"*Sprint(i)*"}" : i in [0..g] ];
-		else
-			tNames := ["t"*Sprint(i) : i in parameters ];
-			uNames := ["u"*Sprint(i) : i in [0..g] ];
-		end if;
+		tNames := ["t"*Sprint(i) : i in parameters ];
+		uNames := ["u"*Sprint(i) : i in [0..g] ];
 		AssignNames(~PDeformation, tNames cat uNames);
-		if (print_betas) then
+		if printDeformationProcess then
 			print "Chosen deformation:";
 			print Deformation;
 		end if;
@@ -1098,7 +1008,7 @@ case curve:
 		// ff := Evaluate(ff, [PPP.i : i in [1..(T+2)]] cat [0 : i in [3..(g+1)]]);
 		// printf "ff = %o\n\n", ff;
 		f := Normalize(ff);
-		printf "\n";
+		if printDeformationProcess then printf "\n"; end if;
 		
 		// Separate parameters into the coefficient ring
 		// From: Q[t_0, ..., t_{T-1}, u_0, ..., u_g]
@@ -1111,11 +1021,7 @@ case curve:
 		else
 			P<x,y> := LocalPolynomialRing(RationalFunctionField(Q, T), 2);
 			R := BaseRing(P);
-			if (printType eq "Latex") then
-				tNames := ["t_{"*Sprint(i)*"}" : i in parameters ];
-			else
-				tNames := ["t"*Sprint(i) : i in parameters ]; // in [1..T]
-			end if;
+			tNames := ["t"*Sprint(i) : i in parameters ]; // in [1..T]
 			AssignNames(~R, tNames);
 			ts := [P | R.i : i in [1..T]];
 		end if;
@@ -1137,14 +1043,14 @@ case curve:
 
 	when "deformation_cassou": // Generic curve construction  
 		// INPUT
-		_betas := _betas_betas;
-		error if (not IsPlaneCurveSemiGroup(_betas)), "Please define a valid plane branch semigroup";
+		_betas := semigroup;
+		error if (not IsPlaneCurveSemiGroup(_betas)), "Please define a valid plane branch semigroup. Given: ", _betas;
 		
 		// Name
 		curve := &*[Sprint(_b)*"-" : _b in _betas];
 		curve := curve[1..#curve-1];
 		
-		if (print_betas) then print "Semigroup:", _betas; end if;
+		if printDeformationProcess then print "Semigroup:", _betas; end if;
 		
 		// Topological information
 		//semiGroupInfo := SemiGroupInfo(_betas);
@@ -1154,22 +1060,21 @@ case curve:
 		
 		// // Choice of monomial curve equations and their deformations
 		// eqs := allMonomialCurves(_betas); // [ [i-th equation options] ]
-		// if (print_betas) then
+		// if (printDeformationProcess) then
 		// 	print "Possible undeformed equations in space:";
 		// 	for i in [1..#_betas-1] do
 		// 		printf "Equation %o options:\n", i;
 		// 		print eqs[i];
 		// 	end for;
 		// end if;
-		// chosenEqs := chosenEqs_betas;
-		// error if (ExtendedType(chosenEqs) ne SeqEnum[RngIntElt]), "Please define a valid list of equation indexes";
-		// error if (#chosenEqs lt (#_betas-1)), "Please define a valid list of equation indexes, # of indexes too small";
-		// chosenEqs := chosenEqs[1..g];
-		// error if (&or[ (eqIdx le 0) or (eqIdx gt #(eqs[i])) : i -> eqIdx in chosenEqs ]), "Please define a valid list of equation indexes, index out of bounds";
-		// monomialCurve := [eqs[i, chosenEqs[i]] : i in [1..#_betas-1]]; // Select the chosen equations
-		// if (print_betas) then print "Chosen equation indexes:", chosenEqs; end if;
-		// if (print_betas) then print "Chosen equations:"; end if;
-		// if (print_betas) then print monomialCurve; end if;
+		// error if (ExtendedType(whichEquations) ne SeqEnum[RngIntElt]), "Please define a valid list of equation indexes";
+		// error if (#whichEquations lt (#_betas-1)), "Please define a valid list of equation indexes, # of indexes too small";
+		// whichEquations := whichEquations[1..g];
+		// error if (&or[ (eqIdx le 0) or (eqIdx gt #(eqs[i])) : i -> eqIdx in whichEquations ]), "Please define a valid list of equation indexes, index out of bounds";
+		// monomialCurve := [eqs[i, whichEquations[i]] : i in [1..#_betas-1]]; // Select the chosen equations
+		// if (printDeformationProcess) then print "Chosen equation indexes:", whichEquations; end if;
+		// if (printDeformationProcess) then print "Chosen equations:"; end if;
+		// if (printDeformationProcess) then print monomialCurve; end if;
 		
 		// Deform the chosen monomial curve equations
 		monomialCurve, Deformation := DeformationCurveCassou(_betas);
@@ -1183,7 +1088,7 @@ case curve:
 		T := totalDim-(g+1); // # of parameters (t_0, ..., t_{T-1})
 		
 		// Determine, separate and show the needed and optional deformation parameters
-		if (print_betas) then print "Parameters:"; end if;
+		if printDeformationProcess then print "Parameters:"; end if;
 		neededParams := []; // parameter needed at each Fi
 		optionalParams := []; // [ [optional parameters for Fi] ]
 		// Parameters of F_1, ..., F_{g-1}
@@ -1208,7 +1113,7 @@ case curve:
 				end if;
 			end for;
 			Sort(~optionalParams[i]);
-			if (print_betas) then printf "    Optional at E%o: %o\n", i, optionalParams[i]; end if;
+			if printDeformationProcess then printf "    Optional at E%o: %o\n", i, optionalParams[i]; end if;
 		end for;
 		// F_g treated separately, no neededParams
 		// F_g = f_g(u_0,...,u_g) + sum_r( t_?*phi_{r,g}(u_0,...,u_g) )
@@ -1226,7 +1131,7 @@ case curve:
 			end for;
 		end for;
 		Sort(~optionalParams[g]);
-		if (print_betas) then
+		if printDeformationProcess then
 			printf "    Optional at E%o: %o\n", g, optionalParams[g];
 			for i in [1..g-1] do
 				printf "    Needed at E%o: %o\n", i, neededParams[i];
@@ -1236,28 +1141,19 @@ case curve:
 		
 		// Choose deformation parameters
 		// INPUT
-		if (interactive_params) then
-			print "\nINPUT: Choose optional parameters";
-			print "Examples: [1,2,3]";
-			print "          all";
-			read parameters, "INPUT>";
-		else
-			parameters := parameters_betas;
-		end if;
+		parameters := deformationParameters;
 		if parameters eq "all" then
 			parameters := optionalParams;
 		else
-			error if (parameters eq ""), "Please define a valid list of parameters, empty input";
-			parameters := eval parameters;
-			error if ((ExtendedType(parameters) ne SeqEnum[RngIntElt]) and (parameters ne [])), "Please define a valid list of parameters, given not a sequence of integers";
+			error if ((ExtendedType(parameters) ne SeqEnum[RngIntElt]) and (parameters ne [])), "Please define a valid list of parameters. Given ", parameters;
 			for p in parameters do
-				error if ((p notin optionalParams) and (p notin neededParams)), "Please define a valid list of parameters, given invalid parameter";
+				error if ((p notin optionalParams) and (p notin neededParams)), "Please define a valid list of parameters. Given invalid parameter ", p;
 			end for;
 		end if;
 		parameters cat:= neededParams; // neededParams always have to be included
 		parameters := [p : p in Set(parameters)]; // remove duplicates
 		Sort(~parameters);
-		if (print_betas) then printf "Chosen parameters: %o\n", parameters; end if;
+		if printDeformationProcess then printf "Chosen parameters: %o\n", parameters; end if;
 		// Create structures with the new number of parameters
 		newT := #parameters; // (temp variable) updated # of parameters (t_0, ..., t_{newT-1})
 		PDeformation := LocalPolynomialRing(Q, newT+(g+1)); // polynomial ring with updated # of parameters
@@ -1281,15 +1177,10 @@ case curve:
 		delete newUs; // (delete temp variable)
 		totalDim := T + g+1; // Update total dimension
 		// Set parameter and variable names
-		if (printType eq "Latex") then
-			tNames := ["t_{"*Sprint(i)*"}" : i in parameters ];
-			uNames := ["u_{"*Sprint(i)*"}" : i in [0..g] ];
-		else
-			tNames := ["t"*Sprint(i) : i in parameters ];
-			uNames := ["u"*Sprint(i) : i in [0..g] ];
-		end if;
+		tNames := ["t"*Sprint(i) : i in parameters ];
+		uNames := ["u"*Sprint(i) : i in [0..g] ];
 		AssignNames(~PDeformation, tNames cat uNames);
-		if (print_betas) then
+		if printDeformationProcess then
 			print "Chosen deformation:";
 			print Deformation;
 		end if;
@@ -1302,18 +1193,20 @@ case curve:
 		
 		gammas := [ [Derivative(F, us[i+1]) : F in C1] : i in [0..g]];
 		
-		printf "monomialCurve =\n"; IndentPush(); printf "%o\n", monomialCurve; IndentPop();
-		printf "C1 =\n"; IndentPush(); printf "%o\n", C1; IndentPop();
-		printf "Deformation =\n"; IndentPush(); printf "%o\n", Deformation; IndentPop();
-		printf "gammas =\n[\n"; IndentPush();
-		for i in [0..g] do
-			printf "[\n"; IndentPush();
-			for j in [1..g] do
-				printf "%o\n", gammas[i+1][j];
+		if printDeformationProcess then
+			printf "monomialCurve =\n"; print monomialCurve;
+			printf "C1 =\n"; print C1;
+			printf "Deformation =\n"; print Deformation;
+			printf "gammas =\n[\n"; IndentPush();
+			for i in [0..g] do
+				printf "[\n"; IndentPush();
+				for j in [1..g] do
+					printf "%o\n", gammas[i+1][j];
+				end for;
+				IndentPop(); printf "]\n";
 			end for;
 			IndentPop(); printf "]\n";
-		end for;
-		IndentPop(); printf "]\n";
+		end if;
 		
 		for i in [1..(g-1)] do
 			termsToMove := PDeformation!0;
@@ -1325,11 +1218,11 @@ case curve:
 					end if;
 				end if;
 			end for;
-			printf "termsToMove = %o\n", termsToMove;
+			if printDeformationProcess then printf "termsToMove = %o\n", termsToMove; end if;
 			Deformation := [pol - termsToMove * gammas[i+1 +1][j] : j->pol in Deformation];
 		end for;
 		
-		printf "Deformation =\n"; IndentPush(); printf "%o\n", Deformation; IndentPop();
+		if printDeformationProcess then printf "Deformation =\n"; print Deformation; end if;
 		
 		// Eliminate variables u2,...,ug
 		for i in [1..(g-1)] do
@@ -1338,7 +1231,7 @@ case curve:
 			Deformation := [Evaluate(pol, T+i+1 +1, uip1) : pol in Deformation];
 		end for;
 		
-		printf "Deformation =\n"; IndentPush(); printf "%o\n", Deformation; IndentPop();
+		if printDeformationProcess then printf "Deformation =\n"; print Deformation; end if;
 		
 		f := Deformation[g];
 		
@@ -1355,11 +1248,7 @@ case curve:
 		else
 			P<x,y> := LocalPolynomialRing(RationalFunctionField(Q, T), 2);
 			R := BaseRing(P);
-			if (printType eq "Latex") then
-				tNames := ["t_{"*Sprint(i)*"}" : i in parameters ];
-			else
-				tNames := ["t"*Sprint(i) : i in parameters ]; // in [1..T]
-			end if;
+			tNames := ["t"*Sprint(i) : i in parameters ]; // in [1..T]
 			AssignNames(~R, tNames);
 			ts := [P | R.i : i in [1..T]];
 		end if;
@@ -1371,21 +1260,21 @@ case curve:
 		for i in neededParams do
 			j := Position(parameters, i);
 			//Append(~invertibleVariables, j);
-			Include(~assumeNonzero, R.j);
+			Include(~assumeNonzero, 1+R.j);
 		end for;
 		
 
 
 	when "deformation_cassou_mod":
 		// INPUT
-		_betas := _betas_betas;
-		error if (not IsPlaneCurveSemiGroup(_betas)), "Please define a valid plane branch semigroup";
+		_betas := semigroup;
+		error if (not IsPlaneCurveSemiGroup(_betas)), "Please define a valid plane branch semigroup. Given: ", _betas;
 		
 		// Name
 		curve := &*[Sprint(_b)*"-" : _b in _betas];
 		curve := curve[1..#curve-1];
 		
-		if (print_betas) then print "Semigroup:", _betas; end if;
+		if printDeformationProcess then print "Semigroup:", _betas; end if;
 		
 		// Topological information
 		//semiGroupInfo := SemiGroupInfo(_betas);
@@ -1395,22 +1284,21 @@ case curve:
 		
 		// // Choice of monomial curve equations and their deformations
 		// eqs := allMonomialCurves(_betas); // [ [i-th equation options] ]
-		// if (print_betas) then
+		// if (printDeformationProcess) then
 		// 	print "Possible undeformed equations in space:";
 		// 	for i in [1..#_betas-1] do
 		// 		printf "Equation %o options:\n", i;
 		// 		print eqs[i];
 		// 	end for;
 		// end if;
-		// chosenEqs := chosenEqs_betas;
-		// error if (ExtendedType(chosenEqs) ne SeqEnum[RngIntElt]), "Please define a valid list of equation indexes";
-		// error if (#chosenEqs lt (#_betas-1)), "Please define a valid list of equation indexes, # of indexes too small";
-		// chosenEqs := chosenEqs[1..g];
-		// error if (&or[ (eqIdx le 0) or (eqIdx gt #(eqs[i])) : i -> eqIdx in chosenEqs ]), "Please define a valid list of equation indexes, index out of bounds";
-		// monomialCurve := [eqs[i, chosenEqs[i]] : i in [1..#_betas-1]]; // Select the chosen equations
-		// if (print_betas) then print "Chosen equation indexes:", chosenEqs; end if;
-		// if (print_betas) then print "Chosen equations:"; end if;
-		// if (print_betas) then print monomialCurve; end if;
+		// error if (ExtendedType(whichEquations) ne SeqEnum[RngIntElt]), "Please define a valid list of equation indexes";
+		// error if (#whichEquations lt (#_betas-1)), "Please define a valid list of equation indexes, # of indexes too small";
+		// whichEquations := whichEquations[1..g];
+		// error if (&or[ (eqIdx le 0) or (eqIdx gt #(eqs[i])) : i -> eqIdx in whichEquations ]), "Please define a valid list of equation indexes, index out of bounds";
+		// monomialCurve := [eqs[i, whichEquations[i]] : i in [1..#_betas-1]]; // Select the chosen equations
+		// if (printDeformationProcess) then print "Chosen equation indexes:", whichEquations; end if;
+		// if (printDeformationProcess) then print "Chosen equations:"; end if;
+		// if (printDeformationProcess) then print monomialCurve; end if;
 		
 		// Deform the chosen monomial curve equations
 		monomialCurve, Deformation := DeformationCurveCassou(_betas);
@@ -1424,7 +1312,7 @@ case curve:
 		T := totalDim-(g+1); // # of parameters (t_0, ..., t_{T-1})
 		
 		// Determine, separate and show the needed and optional deformation parameters
-		if (print_betas) then print "Parameters:"; end if;
+		if printDeformationProcess then print "Parameters:"; end if;
 		neededParams := []; // parameter needed at each Fi
 		optionalParams := []; // [ [optional parameters for Fi] ]
 		// Parameters of F_1, ..., F_{g-1}
@@ -1449,7 +1337,7 @@ case curve:
 				end if;
 			end for;
 			Sort(~optionalParams[i]);
-			if (print_betas) then printf "    Optional at E%o: %o\n", i, optionalParams[i]; end if;
+			if printDeformationProcess then printf "    Optional at E%o: %o\n", i, optionalParams[i]; end if;
 		end for;
 		// F_g treated separately, no neededParams
 		// F_g = f_g(u_0,...,u_g) + sum_r( t_?*phi_{r,g}(u_0,...,u_g) )
@@ -1467,7 +1355,7 @@ case curve:
 			end for;
 		end for;
 		Sort(~optionalParams[g]);
-		if (print_betas) then
+		if printDeformationProcess then
 			printf "    Optional at E%o: %o\n", g, optionalParams[g];
 			for i in [1..g-1] do
 				printf "    Needed at E%o: %o\n", i, neededParams[i];
@@ -1477,28 +1365,19 @@ case curve:
 		
 		// Choose deformation parameters
 		// INPUT
-		if (interactive_params) then
-			print "\nINPUT: Choose optional parameters";
-			print "Examples: [1,2,3]";
-			print "          all";
-			read parameters, "INPUT>";
-		else
-			parameters := parameters_betas;
-		end if;
+		parameters := deformationParameters;
 		if parameters eq "all" then
 			parameters := optionalParams;
 		else
-			error if (parameters eq ""), "Please define a valid list of parameters, empty input";
-			parameters := eval parameters;
-			error if ((ExtendedType(parameters) ne SeqEnum[RngIntElt]) and (parameters ne [])), "Please define a valid list of parameters, given not a sequence of integers";
+			error if ((ExtendedType(parameters) ne SeqEnum[RngIntElt]) and (parameters ne [])), "Please define a valid list of parameters. Given ", parameters;
 			for p in parameters do
-				error if ((p notin optionalParams) and (p notin neededParams)), "Please define a valid list of parameters, given invalid parameter";
+				error if ((p notin optionalParams) and (p notin neededParams)), "Please define a valid list of parameters. Given invalid parameter ", p;
 			end for;
 		end if;
 		parameters cat:= neededParams; // neededParams always have to be included
 		parameters := [p : p in Set(parameters)]; // remove duplicates
 		Sort(~parameters);
-		if (print_betas) then printf "Chosen parameters: %o\n", parameters; end if;
+		if printDeformationProcess then printf "Chosen parameters: %o\n", parameters; end if;
 		// Create structures with the new number of parameters
 		numL := g-1;
 		newT := #parameters; // (temp variable) updated # of parameters (t_0, ..., t_{newT-1})
@@ -1527,21 +1406,6 @@ case curve:
 		delete newT; // (delete temp variable)
 		delete newUs; // (delete temp variable)
 		totalDim := T + numL + g+1; // Update total dimension
-		// Set parameter and variable names
-		// if (printType eq "Latex") then
-		// 	tNames := ["t_{"*Sprint(i)*"}" : i in parameters ];
-		// 	lNames := ["l_{"*Sprint(i)*"}" : i in [1..numL] ];
-		// 	uNames := ["u_{"*Sprint(i)*"}" : i in [0..g] ];
-		// else
-		// 	tNames := ["t"*Sprint(i) : i in parameters ];
-		// 	lNames := ["l"*Sprint(i) : i in [1..numL] ];
-		// 	uNames := ["u"*Sprint(i) : i in [0..g] ];
-		// end if;
-		// AssignNames(~PDeformation, tNames cat lNames cat uNames);
-		// if (print_betas) then
-		// 	print "Chosen deformation:";
-		// 	print Deformation;
-		// end if;
 		
 		// Elimination of variables (Cassou)
 		
@@ -1550,18 +1414,20 @@ case curve:
 		
 		gammas := [ [Derivative(F, us[i+1]) : F in C1] : i in [0..g]];
 		
-		printf "monomialCurve =\n"; IndentPush(); printf "%o\n", monomialCurve; IndentPop();
-		printf "C1 =\n"; IndentPush(); printf "%o\n", C1; IndentPop();
-		printf "Deformation =\n"; IndentPush(); printf "%o\n", Deformation; IndentPop();
-		printf "gammas =\n[\n"; IndentPush();
-		for i in [0..g] do
-			printf "[\n"; IndentPush();
-			for j in [1..g] do
-				printf "%o\n", gammas[i+1][j];
+		if printDeformationProcess then
+			printf "monomialCurve =\n"; print monomialCurve;
+			printf "C1 =\n"; print C1;
+			printf "Deformation =\n"; print Deformation;
+			printf "gammas =\n[\n"; IndentPush();
+			for i in [0..g] do
+				printf "[\n"; IndentPush();
+				for j in [1..g] do
+					printf "%o\n", gammas[i+1][j];
+				end for;
+				IndentPop(); printf "]\n";
 			end for;
 			IndentPop(); printf "]\n";
-		end for;
-		IndentPop(); printf "]\n";
+		end if;
 		
 		for i in [1..(g-1)] do
 			termsToMove := PDeformation!0;
@@ -1574,11 +1440,11 @@ case curve:
 				end if;
 			end for;
 			termsToMove -:= R.(T+i) * us[i+1 +1];
-			printf "termsToMove = %o\n", termsToMove;
+			if printDeformationProcess then printf "termsToMove = %o\n", termsToMove; end if;
 			Deformation := [pol - termsToMove * gammas[i+1 +1][j] / R.(T+i) : j->pol in Deformation];
 		end for;
 		
-		printf "Deformation =\n"; IndentPush(); printf "%o\n", Deformation; IndentPop();
+		if printDeformationProcess then printf "Deformation =\n"; print Deformation; end if;
 		
 		// Eliminate variables u2,...,ug
 		for i in [1..(g-1)] do
@@ -1587,8 +1453,7 @@ case curve:
 			Deformation := [Evaluate(pol, i+1 +1, uip1) : pol in Deformation];
 		end for;
 		
-
-		printf "Deformation =\n"; IndentPush(); printf "%o\n", Deformation; IndentPop();
+		if printDeformationProcess then printf "Deformation =\n"; print Deformation; end if;
 		
 		f := Deformation[g];
 		
@@ -1612,38 +1477,33 @@ case curve:
 		// Save needed non-zero parameters as variables
 		//for i in neededParams do
 		for i in [1..numL] do
+			j := Position(parameters, neededParams[i]);
 			//Append(~invertibleVariables, (T+i));
-			Include(~assumeNonzero, R.(T+i));
+			Include(~assumeNonzero, R.(T+i) + R.j);
 		end for;
 		
 
 	else: // input error
-		error "Please define a valid f";
+		error "Please choose a valid curve";
 end case;
 
-// ### To do before starting ###
+printf "\nCurve: %o\n\n", curve;
+printf "f = %o\n\n", f;
+print "assumeNonzero = "; print assumeNonzero; printf "\n";
 
-if (printType eq "CSV") then
-	printf "\nCurve, %o\n", curve;
-	if print_f then printf "f, %o\n\n", f; end if;
-elif (printType eq "table") then
-	printf "\nCurve: %o\n\n", curve;
-	if print_f then printf "f = %o\n\n", f; end if;
-elif (printType eq "Latex") then
-	printf "\nCurve: %o\n\n", curve;
-	if print_f then printf "f = %o\n\n", f; end if;
-end if;
+//############################
+//### Numerical invariants
+//############################
 
-// Numerical invariants
 if originalCurveString in {"deformation_restricted", "deformation_GroebnerElimination", "deformation_cassou", "deformation_cassou_mod"} then
-	_betas := _betas_betas;
+	_betas := semigroup;
 else
-	_betas := SemiGroup(f); // minimal set of generators of the semigroup
+	_betas := SemiGroup(f);
 end if;
 planeBranchNumbers := PlaneBranchNumbers(_betas);
 g, c, betas, es, ms, ns, qs, _betas, _ms, Nps, kps, Ns, ks := Explode(planeBranchNumbers);
 
-// print proximity matrix
+// Print proximity matrix
 printf "Proximity:\n";
 proxMat := ProximityMatrix(_betas : ExtraPoint:=true);
 //print proxMat;
@@ -1682,13 +1542,15 @@ for row in [1..proxMatSize] do
 end for;
 printf "\n";
 
+//##################
+//### Candidates
+//##################
 
-// Candidates
 nusForPoleCandidates, nusForRootCandidatesIncludingUndetermined, nusIncludingTopological, trueNonTopSigmas, coincidingTopAndNonTopSigmas, otherTopologicalSigmas, nonTopSigmaToIndexList, topologicalSigmaToIndexList, trueNonTopSigmasCoincidences, otherTopologicalSigmasCoincidences := CandidatesData(planeBranchNumbers);
 
 if includeTopological then
 	defaultNus := nusIncludingTopological;
-elif includeUndeterminedCandidateRoots then
+elif includeUndetermined then
 	defaultNus := nusForRootCandidatesIncludingUndetermined;
 else
 	defaultNus := nusForPoleCandidates;
@@ -1739,7 +1601,7 @@ else
 		end for;
 		printf "\n";
 	end for;
-	if includeUndeterminedCandidateRoots or includeTopological then
+	if includeUndetermined or includeTopological then
 		printf "\n_______________________________________________________________________\n";
 		printf "Topological poles that coincide with 'non-topological' sigmas (#=%o)\n", #coincidingTopAndNonTopSigmas;
 		for sigma in Reverse(Sort([sigma : sigma in coincidingTopAndNonTopSigmas])) do
@@ -1774,7 +1636,7 @@ for r in [1..g] do
 	if useDefaultNus[r] then
 		if includeTopological then
 			printf "all candidates, including topological poles of geometric origin";
-		elif includeUndeterminedCandidateRoots then
+		elif includeUndetermined then
 			printf "all candidates with nu not in Gamma_%o, ignoring coincidences with topological poles/roots of geometric origin", r;
 		else
 			printf "all non-geometric candidates";
@@ -1787,10 +1649,16 @@ for r in [1..g] do
 end for;
 printf "\n";
 
-// Calculate stratification
+//################################
+//### Calculate stratification
+//################################
+
 L_all, sigma_all, assumeNonzero, Res_all, indexs_Res_all, epsilon_all := ZetaFunctionStratification(f : nuChoices:=nuChoices, assumeNonzero:=assumeNonzero, verboseLevel:=verboseLevel, planeBranchNumbers:=planeBranchNumbers);
 
-// Print results
+//#####################
+//### Print results
+//#####################
+
 if printResults then
 	printf "\n_______________________________________________________________________\n";
 	printf "RESULTS\n\n";
@@ -1815,10 +1683,10 @@ if printResults then
 	// printf "epsilon_all =\n"; printf "%o\n", epsilon_all;
 end if;
 
+//###########################
+//### To do when finished
+//###########################
 
-
-
-// To do when finished
 printf "\nFinished.\n";
 if quitWhenFinished then
 	quit;
