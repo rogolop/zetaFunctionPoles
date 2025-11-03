@@ -1,0 +1,100 @@
+Magma V2.28-6     Mon Nov  3 2025 12:43:21 on margaret [Seed = 861063961]
+Type ? for help.  Type <Ctrl>-D to quit.
+
+Loading file "/home/roger/.local/tmp/magma_2025-11-03_12-43-21_173195476/usage/\
+main.m"
+
+
+Curve: Maria_5-12_s1_general
+
+f = -x^12 + A_10_1*x^10*y + A_8_2*x^8*y^2 + A_9_2*x^9*y^2 + A_10_2*x^10*y^2 + 
+x^5*y^3 + y^5
+
+assumeNonzero = 
+{}
+
+Proximity:
+0
+└1
+ ├2
+ ├┴3
+ └─┼4
+   └┴5
+     └6
+
+
+_______________________________________________________________________
+Coinciding non-topological candidates (#=0)
+
+_______________________________________________________________________
+Topological poles that coincide with 'non-topological' sigmas (#=0)
+
+_______________________________________________________________________
+Calculating stratification for the following candidates:
+E_1: all candidates with nu not in Gamma_1, ignoring coincidences with topological 
+poles/roots of geometric origin (#=10):
+    nus = [ 1, 2, 4, 6, 9, 11, 14, 16, 21, 26 ]
+
+
+_______________________________________________________________________
+RESULTS
+
+sigma_{1,1}=-3/10
+[
+    1
+]
+
+sigma_{1,2}=-19/60
+[
+    5*A_10_1 - 1
+]
+
+sigma_{1,4}=-7/20
+[
+    5*A_10_1^2 - 3*A_10_1 + 40/3*A_8_2 + 2/5
+]
+
+sigma_{1,6}=-23/60
+[
+    1
+]
+
+sigma_{1,9}=-13/30
+[
+    5*A_10_1^2 - 3*A_10_1 + 12*A_8_2 + 2/5,
+    20*A_10_1*A_8_2 + 17/84*A_10_1 + 12240/11*A_8_2^2 - 33/5*A_8_2 + 
+        54000/11*A_9_2 - 17/420
+]
+
+sigma_{1,11}=-7/15
+[
+    1
+]
+
+sigma_{1,14}=-31/60
+[
+    10*A_10_1 - 3,
+    2400*A_8_2 - 11,
+    5184000000*A_9_2 + 43549,
+    466560000000000*A_10_2 - 14478629
+]
+
+sigma_{1,16}=-11/20
+[
+    1
+]
+
+sigma_{1,21}=-19/30
+[
+    1
+]
+
+sigma_{1,26}=-43/60
+[
+    1
+]
+
+
+Finished.
+
+Total time: 0.210 seconds, Total memory usage: 32.09MB
