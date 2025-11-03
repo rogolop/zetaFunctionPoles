@@ -267,37 +267,37 @@ function FallingFactorial(n, k)
 end function;
 
 
-intrinsic nonconjugateResidue(DPhi_terms::SeqEnum, indexs_DPhi::SetEnum, sigma::FldRatElt, lambda::FldElt, epsilon::[], ep::RngIntElt) -> SeqEnum, SetEnum
+intrinsic ZetaFunctionResidueRelevant(DPhi_terms::SeqEnum, indexs_DPhi::SetEnum, sigma::FldRatElt, lambda::FldElt, epsilon::[], ep::RngIntElt) -> SeqEnum, SetEnum
 	{
-		Return: i,j (+1) -> Apij * (-1)^(i+j)
+		Return: i,j (+1) -> Apij
 		
 		Nonconjugate part of the residue of the complex zeta function, with indexing representing the derivatives of delta(x,y). Multiply the result by its conjugate to obtain the full residue (apart from the multiplying constant).
 	}
-	Res := [];
-	indexs_Res := {};
+	Ap := [];
+	indexs_Ap := {};
 	
 	for ijk in indexs_DPhi do
 		ij := ijk[1..2]; // numbers of derivatives of delta distribution (+1: kept as indexs)
 		k := ijk[3]-1; // number of derivatives of u^s
 		
 		// Integrate
-		pijk_seq := SeqElt(DPhi_terms, ijk);
+		pijk_seq := SeqElt(DPhi_terms, ijk); // i,j,k (+1) -> [<  l, pijkl * (-1)^{i+j}  >]
 		res := 0;
 		for pair in pijk_seq do
 			l, pijkl := Explode(pair);
 			// Add term to the residue
 			res +:= pijkl * lambda^(-l) * E(l, ep*k, epsilon);
 		end for;
-		PlusAssignSeqElt(~Res, ~indexs_Res, ij, res);
+		PlusAssignSeqElt(~Ap, ~indexs_Ap, ij, res * (-1)^(&+ij));
 	end for;
 	
 	// Remove zeros
-	for ij in indexs_Res do
-		if SeqElt(Res, ij) eq 0 then
-			Exclude(~indexs_Res, ij);
+	for ij in indexs_Ap do
+		if SeqElt(Ap, ij) eq 0 then
+			Exclude(~indexs_Ap, ij);
 		end if;
 	end for;
-	return Res, indexs_Res;
+	return Ap, indexs_Ap;
 end intrinsic;
 
 
@@ -502,8 +502,8 @@ intrinsic ZetaFunctionResidue(strictTransform_f::RngMPolLocElt, units_f::SetMult
 	
 	// Storage
 	L_all := [**];
-	Res_all := [**];
-	indexs_Res_all := [**];
+	Ap_all := [**];
+	indexs_Ap_all := [**];
 	sigma_all := [**];
 	epsilon_all := [**];
 	
@@ -546,17 +546,18 @@ intrinsic ZetaFunctionResidue(strictTransform_f::RngMPolLocElt, units_f::SetMult
 		DPhi_terms := SeparateYTerms(DPhi, indexs_DPhi);
 		// i,j,k (+1) -> [<  l, pijkl * (-1)^{i+j}  >]
 		
-		// Calculate residue
-		Res, indexs_Res := nonconjugateResidue(DPhi_terms, indexs_DPhi, sigma, lambda, epsilon, ep);
+		// Calculate the relevant part of the residue
+		Ap, indexs_Ap := ZetaFunctionResidueRelevant(DPhi_terms, indexs_DPhi, sigma, lambda, epsilon, ep);
+		// i,j (+1) -> Apij * (-1)^(i+j)
 		
 		// print
 		if verboseLevel in {"default", "onlyStrata", "detailed"} then
 			printf "sigma_{%o,%o}=%o\n", r, nu, sigma;
 			if verboseLevel in {"detailed"} then
-				for AIdx->ij in Sort([elt : elt in indexs_Res]) do
+				for ij in Sort([elt : elt in indexs_Ap]) do
 					printf "[%o,%o]\n", ij[1], ij[2];
 					IndentPush();
-					printf "%o\n", SeqElt(Res,ij);
+					printf "%o\n", SeqElt(Ap,ij);
 					IndentPop();
 				end for;
 				printf "Simplified:\n";
@@ -564,12 +565,12 @@ intrinsic ZetaFunctionResidue(strictTransform_f::RngMPolLocElt, units_f::SetMult
 		end if;
 		
 		// Basis of the ideal whose roots make the residue =0
-		L := SimplifiedBasis(Res, indexs_Res, P, assumeNonzero : verboseLevel:=verboseLevel);
+		L := SimplifiedBasis(Ap, indexs_Ap, P, assumeNonzero : verboseLevel:=verboseLevel);
 		
 		// Storage
 		Append(~L_all, L);
-		Append(~Res_all, Res);
-		Append(~indexs_Res_all, indexs_Res);
+		Append(~Ap_all, Ap);
+		Append(~indexs_Ap_all, indexs_Ap);
 		Append(~sigma_all, <r, nu,sigma>);
 		Append(~epsilon_all, epsilon);
 		
@@ -584,7 +585,7 @@ intrinsic ZetaFunctionResidue(strictTransform_f::RngMPolLocElt, units_f::SetMult
 		//until true;
 	end for;
 	
-	return L_all, Res_all, indexs_Res_all, sigma_all, epsilon_all;
+	return L_all, Ap_all, indexs_Ap_all, sigma_all, epsilon_all;
 end intrinsic;
 
 
@@ -639,8 +640,8 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 	pointType := 0; // 0 -> starting point, 1 -> free point, 2 -> satellite point
 	PI_TOTAL := [P| x, y]; // Total blowup morphism since starting point
 	L_all := [**];
-	Res_all := [**];
-	indexs_Res_all := [**];
+	Ap_all := [**];
+	indexs_Ap_all := [**];
 	sigma_all := [**];
 	epsilon_all := [**];
 	
@@ -700,7 +701,7 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 			printf "nus = %o\n\n", nuChoices[r];
 		end if;
 		
-		L_all[r], Res_all[r], indexs_Res_all[r], sigma_all[r], epsilon_all[r] := ZetaFunctionResidue(strictTransform_f, units_f, units_w, PI_TOTAL, lambda, <ep, Np, Kp, N, k, nus, r> : assumeNonzero:=assumeNonzero, verboseLevel:=verboseLevel);
+		L_all[r], Ap_all[r], indexs_Ap_all[r], sigma_all[r], epsilon_all[r] := ZetaFunctionResidue(strictTransform_f, units_f, units_w, PI_TOTAL, lambda, <ep, Np, Kp, N, k, nus, r> : assumeNonzero:=assumeNonzero, verboseLevel:=verboseLevel);
 		
 		// Prepare next iteration
 		if r lt g then
@@ -716,7 +717,7 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 		end if;
 	end for;
 	
-	return L_all, sigma_all, assumeNonzero, Res_all, indexs_Res_all, epsilon_all;
+	return L_all, sigma_all, assumeNonzero, Ap_all, indexs_Ap_all, epsilon_all;
 end intrinsic;
 
 
