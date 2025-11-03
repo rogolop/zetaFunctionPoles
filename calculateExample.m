@@ -34,12 +34,11 @@ P<x,y> := LocalPolynomialRing(R,2);
 f :=  (-x^5*y^4 + t17*x^3*y^5)*(t0)^2 + (-x^7 + t1*x^5*y + y^3)^2;
 //f :=  (-x^5*y^4 + t17*x^3*y^5)*(t0)^2 + (-x^7 + t1*x^5*y + t2*x^3*y^2 + y^3)^2;
 
-printf "Semigroup: %o\n", SemiGroup(f);
+printf "\nSemigroup: %o\n", SemiGroup(f);
 printf "f = %o\n", f;
 
-L_all, sigma_all := ZetaFunctionStratification(f : assumeNonzero:=assumeNonzero,
-                                                   verboseLevel:="default");
+L_all, sigma_all := ZetaFunctionStratification(f : assumeNonzero:=assumeNonzero, verboseLevel:="default");
 
-printf "Finished\n";
+printf "\nFinished\n";
 quit;
 

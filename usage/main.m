@@ -26,7 +26,7 @@ nuChoices               := [[], []];     // For each rupture divisor which nus t
 includeTopological      := false;        // Whether to include as candidates the known topological poles/roots of geometric origin (default false, only used if useDefaultNus)
 includeUndetermined     := true;         // Whether to include the candidates that coincide with a pole/root of geometric origin but whose nu is not in the corresponding semigroup (default false, only used if useDefaultNus)
 
-curve                   := "deformation_restricted"; // Choose the curve/deformation 
+curve                   := "deformation_restricted"; // Choose the curve/deformation
 
 // Semigroup (only if curve is "deformation_restricted", "deformation_GroebnerElimination", "deformation_cassou", or "deformation_cassou_mod")
 semigroup               := [6,14,43];
@@ -35,7 +35,7 @@ semigroup               := [6,14,43];
 // [12,16,50,101]; -> 3-4|2-3|2-3
 // [12,18,38,115]; -> 2-3|3-4|2-3
 // [12,18,39,79];  -> 2-3|2-3|3-4
-// [18,45,93,281]; -> 2-5|3-4|3-5 t=[1,73,235] nus=[[], [1,3,4], [2,3,5]]; 
+// [18,45,93,281]; -> 2-5|3-4|3-5 t=[1,73,235] nus=[[], [1,3,4], [2,3,5]];
 // [36,96,292,881];
 // Curves with coinciding candidates: a>=2, b>=a+1, c>=2, {a,b,c} pairwise coprime, d>=1, {c,d} coprime
 abcd := [4,5,7,1]; // [4,5,7,1]; [3,8,7,1]; [5,7,3,2]; [17,19,7,6]; [7,9,4,3];
@@ -54,6 +54,7 @@ deformationParameters   := "all"; //[1,73,235]; //[2,62]; //[0,2,95,96,98]; //[9
 
 originalCurveString := curve;
 assumeNonzero := {};
+printf "\n";
 // Definition of:
 //   - R: the base ring
 //   - P = R[x,y]
@@ -85,7 +86,7 @@ case curve:
 		R<u_1,u_2,u_3,u_8,u_9,'u_{15}'> := BaseRing(P);
 		f := x^6 + y^7 + u_1*x^2*y^5 + u_2*x^3*y^4 + u_3*x^4*y^3 + u_8*x^3*y^5 + u_9*x^4*y^4 + 'u_{15}'*x^4*y^5;
 		gs := [f];
-	when "n-m": // n-m - deform ? - Generic curve construction with 1 characteristic exponent  
+	when "n-m": // n-m - deform ? - Generic curve construction with 1 characteristic exponent
 		n := 3;
 		m := 7;
 		//n := StringToInteger(n); //m := n+1;
@@ -95,7 +96,7 @@ case curve:
 		PDeformation := Parent(f);
 		totalDim := Rank(PDeformation);
 		T := totalDim-2;
-		if T gt 0 then      
+		if T gt 0 then
 			P<x,y> := LocalPolynomialRing(RationalFunctionField(Q, T), 2);
 			R := BaseRing(P);
 			tNames := ["t"*Sprint(i) : i in [1..T]];
@@ -274,11 +275,11 @@ case curve:
 		// w = (6,4)
 		// 1.2.1.1
 		f := y^6 - x^17 + x^6*y^4 + A_9_3*x^9*y^3 +
-			(1/3 + 9/8*A_9_3^2)*x^12*y^2 + 
+			(1/3 + 9/8*A_9_3^2)*x^12*y^2 +
 			A_15_1*x^15*y +
 			A_10_3*x^10*y^3 +
 			A_13_2*x^13*y^2 +
-			A_11_3*x^11*y^3 + 
+			A_11_3*x^11*y^3 +
 			A_14_2*x^14*y^2 +
 			A_12_3*x^12*y^3 +
 			A_13_3*x^13*y^3;
@@ -289,16 +290,16 @@ case curve:
 		// w = (6,4)
 		// 1.2.1.2
 		f := y^6 - x^17 + x^6*y^4 + A_9_3*x^9*y^3 +
-			(1/3 + 9/8*A_9_3^2)*x^12*y^2 + 
+			(1/3 + 9/8*A_9_3^2)*x^12*y^2 +
 			A_15_1*x^15*y +
 			A_10_3*x^10*y^3 +
 			1/1020*(
 				-450*A_15_1^2 + 275*A_10_3*A_9_3 + 540*A_15_1*A_9_3 - 162*A_9_3^2 +
 				1215*A_15_1*A_9_3^3 - 729*A_9_3^4 - 6561/8*A_9_3^6)*x^13*y^2 +
-			A_11_3*x^11*y^3 + 
+			A_11_3*x^11*y^3 +
 			A_14_2*x^14*y^2 +
 			A_12_3*x^12*y^3 +
-			A_13_3*x^13*y^3 + 
+			A_13_3*x^13*y^3 +
 			A_14_3*x^14*y^3;
 	
 	when "Maria_17-6_1.2.2.1":
@@ -307,11 +308,11 @@ case curve:
 		// w = (6,4)
 		// 1.2.2.1
 		f := y^6 - x^17 + x^6*y^4 + A_9_3*x^9*y^3 +
-			(1/3 + 9/8*A_9_3^2)*x^12*y^2 + 
+			(1/3 + 9/8*A_9_3^2)*x^12*y^2 +
 			(27/20*A_9_3^3 + 3/5*A_9_3)*x^15*y +
 			A_10_3*x^10*y^3 +
 			A_13_2*x^13*y^2 +
-			A_11_3*x^11*y^3 + 
+			A_11_3*x^11*y^3 +
 			A_14_2*x^14*y^2 +
 			A_12_3*x^12*y^3 +
 			A_15_2*x^15*y^2;
@@ -322,11 +323,11 @@ case curve:
 		// w = (6,4)
 		// 1.2.2.2.1
 		f := y^6 - x^17 + x^6*y^4 + A_9_3*x^9*y^3 +
-			(1/3 + 9/8*A_9_3^2)*x^12*y^2 + 
+			(1/3 + 9/8*A_9_3^2)*x^12*y^2 +
 			(27/20*A_9_3^3 + 3/5*A_9_3)*x^15*y +
 			A_10_3*x^10*y^3 +
 			(27/20*A_9_3)*x^13*y^2 +
-			A_11_3*x^11*y^3 + 
+			A_11_3*x^11*y^3 +
 			A_14_2*x^14*y^2 +
 			A_12_3*x^12*y^3 +
 			A_15_2*x^15*y^2 +
@@ -338,11 +339,11 @@ case curve:
 		// w = (6,4)
 		// 1.2.2.2.2.1
 		f := y^6 - x^17 + x^6*y^4 + A_9_3*x^9*y^3 +
-			(1/3 + 9/8*A_9_3^2)*x^12*y^2 + 
+			(1/3 + 9/8*A_9_3^2)*x^12*y^2 +
 			(27/20*A_9_3^3 + 3/5*A_9_3)*x^15*y +
 			A_10_3*x^10*y^3 +
 			(27/20*A_9_3)*x^13*y^2 +
-			A_11_3*x^11*y^3 + 
+			A_11_3*x^11*y^3 +
 			(45/32*A_9_3*A_11_3)*x^14*y^2 +
 			A_12_3*x^12*y^3 +
 			A_15_2*x^15*y^2 +
@@ -355,11 +356,11 @@ case curve:
 		// w = (6,4)
 		// 1.2.2.2.2.2
 		f := y^6 - x^17 + x^6*y^4 + A_9_3*x^9*y^3 +
-			(1/3 + 9/8*A_9_3^2)*x^12*y^2 + 
+			(1/3 + 9/8*A_9_3^2)*x^12*y^2 +
 			(27/20*A_9_3^3 + 3/5*A_9_3)*x^15*y +
 			A_10_3*x^10*y^3 +
 			(27/20*A_9_3)*x^13*y^2 +
-			A_11_3*x^11*y^3 + 
+			A_11_3*x^11*y^3 +
 			(45/32*A_9_3*A_11_3)*x^14*y^2 +
 			A_12_3*x^12*y^3 +
 			(63/44*A_9_3*A_12_3)*x^15*y^2 +
@@ -531,13 +532,13 @@ case curve:
 		f := x^17 + (-10)*x^16 + x^15 + 6*x^14*y - x^14 + (-6)*x^13*y + (-6)*x^12*y + 9*x^11*y^2 + (-9)*x^10*y^2 + 8*x^8*y^3 + 2*x^7*y^3 + 6*x^5*y^4 - y^6;
 		
 	when "David_5":
-		// Puiseux ; Zariski 
+		// Puiseux ; Zariski
 		P<x,y> := LocalPolynomialRing(Q, 2);
 		R := BaseRing(P);
 		f := x^59 - x^58 + 46*x^57*y + (-483)*x^56*y^2 + 552*x^55*y^3 + 115*x^53*y^4 + 22862*x^52*y^5 + 63204*x^51*y^6 + 46*x^50*y^7 + (-4715)*x^48*y^8 + 738484*x^47*y^9 + (-86434)*x^46*y^10 + 82708*x^43*y^12 + 2691552*x^42*y^13 + 713*x^41*y^14 + (-586661)*x^38*y^16 + 777630*x^37*y^17 + 1310333*x^33*y^20 + 4232*x^32*y^21 + 2*x^29*y^23 + (-514234)*x^28*y^24 + 414*x^24*y^27 + 7820*x^23*y^28 + 4186*x^19*y^31 + 1932*x^14*y^35 - y^46;
 		
 	when "David_6":
-		// Puiseux 34,38,39; Zariski 39  -> raiz 
+		// Puiseux 34,38,39; Zariski 39  -> raiz
 		P<x,y> := LocalPolynomialRing(Q, 2);
 		R := BaseRing(P);
 		f := x^39 - x^38 + 34*x^37*y + (-425)*x^36*y^2 + 2380*x^35*y^3 + (-5780)*x^34*y^4 + 4862*x^33*y^5 + (-714)*x^32*y^6 + 170*x^28*y^9 + 11237*x^27*y^10 + 64736*x^26*y^11 + 40749*x^25*y^12 + 1190*x^24*y^13 + 2*x^19*y^17 + (-3213)*x^18*y^18 + 10540*x^17*y^19 + (-357)*x^16*y^20 + 119*x^9*y^26 + 34*x^8*y^27 - y^34;
@@ -593,7 +594,7 @@ case curve:
 		R<A_4_3, A_3_4, A_4_4, A_5_2, A_5_3, A_5_4> := BaseRing(P);		
 		f := (y^6 - x^7 + A_5_2*x^5*y^2 + A_4_3*x^4*y^3 + A_3_4*x^3*y^4 + A_4_4*x^4*y^4 + A_5_3*x^5*y^3 + A_5_4*x^5*y^4)^2 + x^6*y^7;
 		
-		// // Puiseux 12,14,17; Zariski 
+		// // Puiseux 12,14,17; Zariski
 		// P<x,y> := LocalPolynomialRing(RationalFunctionField(Q, 1), 2);
 		// R<t> := BaseRing(P);
 		// f := (y^3 + x^7)^2 + x^17;
@@ -628,7 +629,7 @@ case curve:
 		f := x^45 - 9*x^40*y^2 + 36*x^35*y^4 - 3*t0^3*x^33*y^5 - 84*x^30*y^6 + 18*t0^3*x^28*y^7 + 126*x^25*y^8 + t0^4*t72^3*x^26*y^8 - 45*t0^3*x^23*y^9 - 126*x^20*y^10 + (3*t0^6 - 5*t0^4*t72^3)*x^21*y^10 + 60*t0^3*x^18*y^11 + 84*x^15*y^12 + (-9*t0^6 + 10*t0^4*t72^3)*x^16*y^12 - 45*t0^3*x^13*y^13 - 36*x^10*y^14 + (9*t0^6 - 10*t0^4*t72^3)*x^11*y^14 + 18*t0^3*x^8*y^15 - t0^9*x^9*y^15 + 9*x^5*y^16 + (-3*t0^6 + 5*t0^4*t72^3)*x^6*y^16 - 3*t0^3*x^3*y^17 - y^18 - t0^4*t72^3*x*y^18;
 
 
-	when "deformation_restricted": // Generic curve construction  
+	when "deformation_restricted": // Generic curve construction
 		// INPUT
 		_betas := semigroup;
 		error if (not IsPlaneCurveSemiGroup(_betas)), "Please define a valid plane branch semigroup. Given: ", _betas;
@@ -854,7 +855,7 @@ case curve:
 
 
 
-	when "deformation_GroebnerElimination": // Generic curve construction  
+	when "deformation_GroebnerElimination": // Generic curve construction
 		// INPUT
 		_betas := semigroup;
 		error if (not IsPlaneCurveSemiGroup(_betas)), "Please define a valid plane branch semigroup. Given: ", _betas;
@@ -1041,7 +1042,7 @@ case curve:
 
 
 
-	when "deformation_cassou": // Generic curve construction  
+	when "deformation_cassou": // Generic curve construction
 		// INPUT
 		_betas := semigroup;
 		error if (not IsPlaneCurveSemiGroup(_betas)), "Please define a valid plane branch semigroup. Given: ", _betas;
@@ -1226,7 +1227,7 @@ case curve:
 		
 		// Eliminate variables u2,...,ug
 		for i in [1..(g-1)] do
-			uip1 := us[i+1 +1] - Deformation[i]; // F=0 -> u2=u2-F 
+			uip1 := us[i+1 +1] - Deformation[i]; // F=0 -> u2=u2-F
 			Deformation[i] := PDeformation!0; // Avoid unnecessary calculations
 			Deformation := [Evaluate(pol, T+i+1 +1, uip1) : pol in Deformation];
 		end for;
@@ -1448,7 +1449,7 @@ case curve:
 		
 		// Eliminate variables u2,...,ug
 		for i in [1..(g-1)] do
-			uip1 := us[i+1 +1] - Deformation[i] / R.(T+i); // F=0 -> u2=u2-F 
+			uip1 := us[i+1 +1] - Deformation[i] / R.(T+i); // F=0 -> u2=u2-F
 			//Deformation[i] := PDeformation!0; // Avoid unnecessary calculations
 			Deformation := [Evaluate(pol, i+1 +1, uip1) : pol in Deformation];
 		end for;

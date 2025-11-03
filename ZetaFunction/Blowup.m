@@ -75,7 +75,7 @@ intrinsic MultiplicitiesAtAllRuptureDivisors(_betas::[]) -> [], [], [], []
 end intrinsic;
 
 
-intrinsic PlaneBranchNumbers(_betas::[]) -> Tup 
+intrinsic PlaneBranchNumbers(_betas::[]) -> Tup
 	{
 		TO DO
 	}
@@ -127,7 +127,7 @@ intrinsic Nus(planeBranchNumbers, r : discardTopologial:=true) -> [], []
 	g, c, betas, es, ms, ns, qs, _betas, _ms, Nps, kps, Ns, ks := Explode(planeBranchNumbers);
 	Np, kp, N, k := MultiplicitiesAtThisRuptureDivisor(r, Nps, kps, Ns, ks);
 	
-	// Topological roots of Bernstein-Sato polynomial: 
+	// Topological roots of Bernstein-Sato polynomial:
 	// - they are roots for any topologically trivial deformation
 	// - they give unit (=> nonzero) residues of the complex zeta function (see TFG-Roger, p.28-29)
 	//
@@ -145,7 +145,7 @@ intrinsic Nus(planeBranchNumbers, r : discardTopologial:=true) -> [], []
 	//
 	// Define as in 1) and 3) -> Gamma_i: Ei
 	//
-	// Gamma_r = < 
+	// Gamma_r = <
 	//   (n_1*n_2*...*n_r) * _m_0,
 	//       (n_2*...*n_r) * _m_1,
 	//                 ...
@@ -333,7 +333,7 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 		- point to blow up: (0,0)
 		- previous exceptional divisor (at free and satellite points): x=0
 		- the other crossing exceptional divsor (at satellite points): y=0
-		- strictTransform_f may have any tangent
+		- strictTransform_f is singular at (0,0) or tangent to x=0
 	}
 	debugPrint := false;
 	
@@ -398,7 +398,7 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 						print &*[R| tup[1] : tup in Factorization(Denominator(bToTheE))];
 					end if;
 					
-					if Type(R) eq FldFunRat then // R = Q(t_1,...,t_k) 
+					if Type(R) eq FldFunRat then // R = Q(t_1,...,t_k)
 						if bToTheE notin BaseRing(R) then // bToTheE depends on t_i
 							nonzeroFactors := [RingOfIntegers(R)| tup[1] : tup in Factorization(Numerator(bToTheE)) cat Factorization(Denominator(bToTheE))];
 							//bNonzeroFactors := Reduce(bNonzeroFactors);
@@ -407,7 +407,7 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 								if h notin assumeNonzero then
 								//if h notin ideal<RingOfIntegers(R)| assumeNonzero> then
 									if firstPrint then printf "\n"; firstPrint := false; end if;
-									printf "WARNING! Assuming that the following is nonzero:\n"; print h;
+									printf "WARNING! Assuming that the following is nonzero:\n"; print h; printf "\n";
 									Include(~assumeNonzero, h);
 									//assumeNonzero := Reduce(assumeNonzero);
 								end if;
@@ -480,7 +480,7 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 			if verboseLevel in {"detailed"} then printf "C = %o\n", C; end if;
 			
 			// C != 0
-			if Type(R) eq FldFunRat then // R = Q(t_1,...,t_k) 
+			if Type(R) eq FldFunRat then // R = Q(t_1,...,t_k)
 				if C notin BaseRing(R) then // C depends on t_i
 					nonzeroFactors := [RingOfIntegers(R)| tup[1] : tup in Factorization(Numerator(C)) cat Factorization(Denominator(C))];
 					firstPrint := true;
@@ -543,7 +543,7 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 	// Free point on a rupture divisor (not centered)
 	
 	// a != 0
-	if Type(R) eq FldFunRat then // R = Q(t_1,...,t_k) 
+	if Type(R) eq FldFunRat then // R = Q(t_1,...,t_k)
 		if a notin BaseRing(R) then // a depends on t_i
 			nonzeroFactors := [RingOfIntegers(R)| tup[1] : tup in Factorization(Numerator(a)) cat Factorization(Denominator(a))];
 			firstPrint := true;
@@ -596,7 +596,7 @@ intrinsic CenterOriginOnCurve(strictTransform_f::RngMPolLocElt, xyExp_fw::[], un
 	
 	// lambda != 0
 	// This should not trigger because it has been performed in Blowup() for a=1/lambda
-	if Type(R) eq FldFunRat then // R = Q(t_1,...,t_k) 
+	if Type(R) eq FldFunRat then // R = Q(t_1,...,t_k)
 		if lambda notin BaseRing(R) then // a depends on t_i
 			nonzeroFactors := [RingOfIntegers(R)| tup[1] : tup in Factorization(Numerator(lambda)) cat Factorization(Denominator(lambda))];
 			firstPrint := true;

@@ -210,77 +210,54 @@ end intrinsic;
 
 // Residues
 
-function between0and1(x)
-	// return r in the interval (0,1] differing from x in an integer value
-	r := x - Floor(x);
-	if (r eq 0) then return 1; end if;
-	return r;
-end function;
-
-
 function GammaFromTo_Risky(f, t)
 	// GammaFromTo(f, t) = Gamma(f) / Gamma(t)
-	// Don't avoid zeros and infinities, may cause errors.
-	// (f-t) must be integer
-	error if ((f-t) notin IntegerRing()), "At GammaFromTo(f, t): f and t must differ by an integer\nGiven arguments:", f, ",", t;
-	
-	coef := 1;
-	
+	// f and t must not be nonnegative integers
+	// (f-t) must be an integer
+	error if ((f-t) notin IntegerRing()), "At GammaFromTo(f, t): f and t must differ by an integer\nGiven arguments: ", f, ",", t;
+	result := 1;
 	while (f gt t) do
-		f -:= 1;    
-		coef *:= f;
+		f -:= 1;
+		result *:= f;
 	end while;
-	
 	while (f lt t) do
-		coef /:= f;
+		result /:= f;
 		f +:= 1;
 	end while;
-	
-	return coef;
+	return result;
 end function;
 
 
-intrinsic E(l::RngIntElt, k::RngIntElt, epsilon::[], ep::RngIntElt) -> FldFunRatMElt
+intrinsic E(l::RngIntElt, ek::RngIntElt, epsilon::[]) -> FldFunRatMElt
 	{
-		Gamma(l+epsilon+1) * Gamma(sigma-i+1) / Gamma(l+epsilon+sigma-i+2) * 1/ref, with ref = Gamma(a) * Gamma(b) / Gamma(c), where a,b,c are in the interval (0,1] differing of the first values by integer numbers.
+		( Gamma(epsilon1+1+l) * Gamma(epsilon3+1-ek) / Gamma(epsilon1+epsilon3+2+l-ek) ) / ( Gamma(epsilon1+1) * Gamma(epsilon3+1) / Gamma(epsilon1+epsilon3+2) ).
 	}
-	e := 1;
-	
-	arg := epsilon[1] + 1 + l;
-	e *:= GammaFromTo_Risky(arg, between0and1(arg));
-	//e *:= GammaFromTo_Risky(arg, epsilon[1] + 1);
-	
-	arg := epsilon[3] + 1 - ep*k;
-	e *:= GammaFromTo_Risky(arg, between0and1(arg));
-	//e *:= GammaFromTo_Risky(arg, epsilon[3] + 1);
-	
-	arg := epsilon[1] + epsilon[3] + 2 + l - ep*k;
-	e /:= GammaFromTo_Risky(arg, between0and1(arg));
-	//e /:= GammaFromTo_Risky(arg, epsilon[1] + epsilon[3] + 2 ); 
-	return e;
+	return GammaFromTo_Risky( (epsilon[1]+1) + l, epsilon[1]+1 ) *
+		GammaFromTo_Risky( (epsilon[3]+1) - ek, epsilon[3]+1 ) /
+		GammaFromTo_Risky( (epsilon[1]+epsilon[3]+2) + l - ek, epsilon[1]+epsilon[3]+2 );
 end intrinsic;
+
+
+function listYTerms(f)
+	L := [];
+	for l in [0..Degree(f,2)] do
+		term := Coefficient(f, 2, l);
+		if term ne 0 then
+			Append(~L, <l, term>);
+		end if;
+	end for;
+	return L;
+end function;
 
 
 intrinsic SeparateYTerms(s::SeqEnum, indexs::SetEnum) -> SeqEnum
 	{
-		Convert each polynomial in s to a sequence of pairs [l,term], there term is the coefficient of y^l of the polynomial (as member of R[y] with the corresponding ring R)
-	}  
-	function listYTerms(f)
-		L := [];
-		for l in [0..Degree(f,2)] do
-			term := Coefficient(f, 2, l);
-			if term ne 0 then
-				Append(~L, <l, term>);
-			end if;
-		end for;
-		return L;
-	end function;
-	
+		Convert each polynomial in s to a sequence of pairs [l,term], where term is the coefficient of y^l of the polynomial (as member of R[y] with the corresponding ring R)
+	}
 	w := [];
 	for I in indexs do
 		AssignSeqElt(~w, I, listYTerms(SeqElt(s, I)));
 	end for;
-	
 	return w;
 end intrinsic;
 
@@ -292,7 +269,9 @@ end function;
 
 intrinsic nonconjugateResidue(DPhi_terms::SeqEnum, indexs_DPhi::SetEnum, sigma::FldRatElt, lambda::FldElt, epsilon::[], ep::RngIntElt) -> SeqEnum, SetEnum
 	{
-		"Nonconjugate" part of the residue of the complex zeta function, with indexing representing the derivatives of delta(x,y). Multiply the result by its conjugate to obtain the full residue (apart from the multiplying constant).
+		Return: i,j (+1) -> Apij * (-1)^(i+j)
+		
+		Nonconjugate part of the residue of the complex zeta function, with indexing representing the derivatives of delta(x,y). Multiply the result by its conjugate to obtain the full residue (apart from the multiplying constant).
 	}
 	Res := [];
 	indexs_Res := {};
@@ -307,7 +286,7 @@ intrinsic nonconjugateResidue(DPhi_terms::SeqEnum, indexs_DPhi::SetEnum, sigma::
 		for pair in pijk_seq do
 			l, pijkl := Explode(pair);
 			// Add term to the residue
-			res +:= pijkl * lambda^(-l) * E(l, k, epsilon, ep);
+			res +:= pijkl * lambda^(-l) * E(l, ep*k, epsilon);
 		end for;
 		PlusAssignSeqElt(~Res, ~indexs_Res, ij, res);
 	end for;
@@ -382,7 +361,7 @@ intrinsic SimplifiedBasis(Res::[], indexs_Res::{}, P::RngMPolLoc, assumeNonzero:
 		// listRes := Reduce(listRes);
 		if l gt 0 then
 			//if verboseLevel in {"detailed"} then print "Eliminating nonzeros"; end if;
-			Rext := PolynomialRing(Q,l+k); 
+			Rext := PolynomialRing(Q,l+k);
 			AssignNames(~Rext,[Sprintf("z%o",i):i in [1..l]] cat [Sprint(R.i):i in [1..k]]);
 			listResNew       := [Evaluate(h,[Rext| Rext.(l+i):i in [1..k]]) : h in listRes];
 			assumeNonzeroNew := [Evaluate(h,[Rext| Rext.(l+i):i in [1..k]]) : h in assumeNonzero];
@@ -476,122 +455,7 @@ intrinsic SimplifiedBasis(Res::[], indexs_Res::{}, P::RngMPolLoc, assumeNonzero:
 end intrinsic;
 
 
-intrinsic PrintStratification(L::[[]], nu, sigma, Np)
-	{
-		print [[]] containing the polynomials where a residue is 0
-	}
-	printf "%4o │ %4o/%-4o = %8o ", nu, (sigma*Np), Np, sigma;
-	if L eq [[0]] then
-		printf "[ 0";
-	elif L eq [[1]] then
-		printf "[   1";
-	elif #L eq 1 then
-		l := L[1];
-		printf "─"^1*" ";
-		for j->f in l do
-			printf "\n";
-			IndentPush(8);
-			printf "(%o)", f;
-			IndentPop(8);
-			if j lt #l then printf " or "; end if;
-		end for;
-	else
-		printf "─"^0*"┬ ";
-		for i->l in L do
-			for j->f in l do
-				printf "\n";
-				IndentPush(8);
-				printf "(%o)", f;
-				IndentPop(8);
-				if j lt #l then printf " or "; end if;
-			end for;
-			if i lt #L then
-				printf "\n"*" "^5*"│"*" "^22*" "^0;
-				if i eq (#L-1) then
-					printf "└";
-				else
-					printf "│";
-				end if;
-				printf " ";//*"& ";
-			end if;
-		end for;
-	end if;
-	printf "\n";
-end intrinsic;
-
-
-intrinsic PrintStratificationAsCSV(L::[[]], nu, sigma, Np)
-	{
-		print [[]] containing the polynomials where a residue is 0
-	}
-	printf "%4o, %4o/%-4o, %8o, ", nu, (sigma*Np), Np, sigma;
-	if L eq [[0]] then
-		printf "0";
-	elif L eq [[1]] then
-		printf "1";
-	elif #L eq 1 then
-		l := L[1];
-		for j->f in l do
-			printf "%o", f;
-			if j lt #l then printf ", "; end if;
-		end for;
-	else
-		for i->l in L do
-			for j->f in l do
-				printf "%o", f;
-				if j lt #l then printf ", "; end if;
-			end for;
-			if i lt #L then
-				//printf "\n%4o, %4o/%-4o, %8o, ", nu, (sigma*Np), Np, sigma;
-				printf "\n,,, ";
-			end if;
-		end for;
-	end if;
-	printf "\n";
-end intrinsic;
-
-
-intrinsic PrintStratificationAsLatex(L::[[]], nu, sigma, Np)
-	{
-		print [[]] containing the polynomials where a residue is 0
-	}
-	printf "        $%4o $&$ %4o/%-4o =  %8o $&$ ", nu, (sigma*Np), Np, sigma;
-	if L eq [[0]] then
-		printf "0";
-	elif L eq [[1]] then
-		printf "1";
-	elif #L eq 1 then
-		l := L[1];
-		for j->f in l do
-			sf := Sprint(f);
-			//str := (sf[1] eq "t") select "t_" else "";
-			//str cat:= &cat[ part cat "t_" : part in Split(sf,"t")];
-			str := &cat[ part cat "\\," : part in Split(sf,"*")];
-			str := Substring(str, 1, #str-2);
-			printf "%o", str;
-			if j lt #l then printf "$,$ "; end if;
-		end for;
-	else
-		for i->l in L do
-			for j->f in l do
-				sf := Sprint(f);
-				//str := (sf[1] eq "t") select "t_" else "";
-				//str cat:= &cat[ part cat "t_" : part in Split(sf,"t")];
-				str := &cat[ part cat "\\," : part in Split(sf,"*")];
-				str := Substring(str, 1, #str-2);
-				printf "%o", str;
-				if j lt #l then printf "$, $ "; end if;
-			end for;
-			if i lt #L then
-				printf "$\\\\ \n               &                         &$ ";
-			end if;
-		end for;
-	end if;
-	printf "$\\\\ \\hline  \n";
-end intrinsic;
-
-
-intrinsic ZetaFunctionResidue(arguments::Tup : verboseLevel:="default") -> List, List, List, List, List
+intrinsic ZetaFunctionResidue(strictTransform_f::RngMPolLocElt, units_f::SetMulti, units_w::SetMulti, PI_TOTAL::[], lambda::FldElt, numbers::Tup: assumeNonzero:={}, verboseLevel:="default") -> List, List, List, List, List
 	{
 		Return and print stratification of the residue of the complez zeta function at candidate poles corresponding to nus in rupture divisor r, each one as [[]] which is a sequence of generators of the zero ideal, represented as sequences containing their irreducible factors.
 		
@@ -599,12 +463,15 @@ intrinsic ZetaFunctionResidue(arguments::Tup : verboseLevel:="default") -> List,
 	}
 	
 	// Prepare arguments
-	P, xy, pi1, pi2, strictTransform_f, units_f, units_w, lambda, ep, Np, kp, N, k, nus, r, assumeNonzero := Explode(arguments);
+	P:=Parent(strictTransform_f); x:=P.1; y:=P.2; R:=BaseRing(P);
+	pi1, pi2 := Explode(PI_TOTAL);
+	ep, Np, kp, N, k, nus, r := Explode(numbers);
 	
-	x, y := Explode(xy);
-	R := BaseRing(P);
+	if #nus eq 0 then
+		return [**], [**], [**], [**], [**];
+	end if;
 	
-	nuMax := Max([0] cat nus);
+	nuMax := Max(nus);
 	nuOld := 0;
 	
 	// Units
@@ -622,14 +489,14 @@ intrinsic ZetaFunctionResidue(arguments::Tup : verboseLevel:="default") -> List,
 		v := ProductDiscardingVar(v, tm, [1,nuMax]);
 	end for;
 	
-	// u1
-	u /:= Evaluate(u, [0,0]);
+	// u1(x,y) = u(x,y) / u(0,0) -> discard common unit |u(0,0)|^{2 sigma} from the residue (to B_p)
+	u1 := u / Evaluate(u, [0,0]);
 	
 	// pi
 	pi1 := DiscardVar(pi1, [1,nuMax]);
 	pi2 := DiscardVar(pi2, [1,nuMax]);
 	
-	// Formal v(x,y) * phi(X,Y) * Z^s, to be evaluated at X=pi1, Y=pi2, Z=u
+	// Formal v(x,y) * phi(X,Y) * Z^s, to be evaluated at X=pi1, Y=pi2, Z=u1
 	Phi := [[[v]]];
 	indexs_Phi := {[1,1,1]};
 	
@@ -642,70 +509,78 @@ intrinsic ZetaFunctionResidue(arguments::Tup : verboseLevel:="default") -> List,
 	
 	for nu in nus do
 		//repeat // Do once, but group statements to calculate time easily
-			// Relevant numbers
-			sigma := Sigma(Np, kp, nu);
-			epsilon := [N[j] * sigma + k[j] : j in [1..3] ];
-			
-			// // Info regarding the sign of B_p
-			// printf "\nepsilon = [ %o, %o, %o ]\n", epsilon[1], epsilon[2], epsilon[3];
-			// printf "Fractional part {-eps}: %o, %o, %o\n", FractionalPart(-epsilon[1]), FractionalPart(-epsilon[2]), FractionalPart(-epsilon[3]);
-			// RR := RealField();
-			// RAprox := RealField(6);
-			// printf "cot(pi*(-eps)): %o, %o\n", RAprox!Cot(-Pi(RR)*epsilon[1]), RAprox!Cot(-Pi(RR)*epsilon[3]);
-			// printf "cot(pi*(-eps)): %o, %o\n", (Cot(-Pi(RR)*epsilon[1]) gt 0)select"+++"else"---", (Cot(-Pi(RR)*epsilon[3]) gt 0)select"+++"else"---";
-			// BFactor := Cot(Pi(RR)*epsilon[1]) + Cot(Pi(RR)*epsilon[3]);
-			// printf "cot(pi*eps1)+cot(pi*eps3) = %o%o\n", RAprox!BFactor, (BFactor gt 0)select" !!!!!!"else"";
-			
-			// Derivative of Phi(pi1(...),pi2(...),u(...); x,y) with respect to x
-			Phi, indexs_Phi := FormalDerivativeDiscardingVar(Phi, indexs_Phi, [pi1, pi2, u], nu-nuOld, x, [1, nuMax-nu]);
-			nuOld := nu;
-			
-			DPhi := Phi;
-			indexs_DPhi := indexs_Phi;
-			// Evaluate at x=0
-			EvaluateSeq(~DPhi, ~indexs_DPhi, x, 0);
-			
-			// Convert d^i/dx^i(Z^s) = (s)*...*(s-i+1)*Z^(s-i)
-			for ijk in indexs_DPhi do
-				k_idx := ijk[3] - 1; // Number of derivatives of Z^s
-				TimesAssignSeqElt(~DPhi, ijk, FallingFactorial(sigma, k_idx));
-			end for;
-						
-			// Expand polynomials depending on power of y
-			DPhi_terms := SeparateYTerms(DPhi, indexs_DPhi);
-			
-			// Calculate residue
-			Res, indexs_Res := nonconjugateResidue(DPhi_terms, indexs_DPhi, sigma, lambda, epsilon, ep);
-			
-			// print
-			if verboseLevel in {"default", "onlyStrata", "detailed"} then
-				printf "sigma_{%o,%o}=%o\n", r, nu, sigma;
-				if verboseLevel in {"detailed"} then
-					for AIdx->ij in Sort([elt : elt in indexs_Res]) do
-						printf "[%o,%o]\n", ij[1], ij[2];
-						IndentPush();
-						printf "%o\n", SeqElt(Res,ij);
-						IndentPop();
-					end for;
-					printf "Simplified:\n";
-				end if;
+		
+		// Relevant numbers
+		sigma := Sigma(Np, kp, nu);
+		epsilon := [N[j] * sigma + k[j] : j in [1..3] ];
+		
+		// // Info regarding the sign of B_p
+		// printf "\nepsilon = [ %o, %o, %o ]\n", epsilon[1], epsilon[2], epsilon[3];
+		// printf "Fractional part {-eps}: %o, %o, %o\n", FractionalPart(-epsilon[1]), FractionalPart(-epsilon[2]), FractionalPart(-epsilon[3]);
+		// RR := RealField();
+		// RAprox := RealField(6);
+		// printf "cot(pi*(-eps)): %o, %o\n", RAprox!Cot(-Pi(RR)*epsilon[1]), RAprox!Cot(-Pi(RR)*epsilon[3]);
+		// printf "cot(pi*(-eps)): %o, %o\n", (Cot(-Pi(RR)*epsilon[1]) gt 0)select"+++"else"---", (Cot(-Pi(RR)*epsilon[3]) gt 0)select"+++"else"---";
+		// BFactor := Cot(Pi(RR)*epsilon[1]) + Cot(Pi(RR)*epsilon[3]);
+		// printf "cot(pi*eps1)+cot(pi*eps3) = %o%o\n", RAprox!BFactor, (BFactor gt 0)select" !!!!!!"else"";
+		
+		// Derivative of 1/u(0,0)^s * Phi(pi1(...),pi2(...),u(...); x,y) with respect to x
+		Phi, indexs_Phi := FormalDerivativeDiscardingVar(Phi, indexs_Phi, [pi1, pi2, u1], nu-nuOld, x, [1, nuMax-nu]);
+		// Phi = partial_x^nu (u1^s * v * phi|_{pi1,pi2})
+		
+		DPhi := Phi;
+		indexs_DPhi := indexs_Phi;
+		// Evaluate at x=0
+		EvaluateSeq(~DPhi, ~indexs_DPhi, x, 0);
+		// DPhi = partial_x^nu|_{x=0} (u1^s * v * phi|_{pi1,pi2})
+		// i,j,k (+1) -> coefficient of ( partial_z1^i|_(0,0) partial_z2^j|_(0,0) phi * partial_Z^k|_u1(0,y) Z^s )
+		
+		// Convert d^k/dx^k (Z^s) = (s)*...*(s-k+1) * Z^(s-k)
+		for ijk in indexs_DPhi do
+			k_idx := ijk[3] - 1; // Number of derivatives of Z^s
+			TimesAssignSeqElt(~DPhi, ijk, FallingFactorial(sigma, k_idx));
+		end for;
+		// i,j,k (+1) -> coefficient of ( partial_z1^i|_(0,0) partial_z2^j|_(0,0) phi * u1(0,y)^{sigma-k} )
+		
+		// Expand polynomials depending on power of y
+		DPhi_terms := SeparateYTerms(DPhi, indexs_DPhi);
+		// i,j,k (+1) -> [<  l, pijkl * (-1)^{i+j}  >]
+		
+		// Calculate residue
+		Res, indexs_Res := nonconjugateResidue(DPhi_terms, indexs_DPhi, sigma, lambda, epsilon, ep);
+		
+		// print
+		if verboseLevel in {"default", "onlyStrata", "detailed"} then
+			printf "sigma_{%o,%o}=%o\n", r, nu, sigma;
+			if verboseLevel in {"detailed"} then
+				for AIdx->ij in Sort([elt : elt in indexs_Res]) do
+					printf "[%o,%o]\n", ij[1], ij[2];
+					IndentPush();
+					printf "%o\n", SeqElt(Res,ij);
+					IndentPop();
+				end for;
+				printf "Simplified:\n";
 			end if;
-			
-			// Basis of the ideal whose roots make the residue =0
-			L := SimplifiedBasis(Res, indexs_Res, P, assumeNonzero : verboseLevel:=verboseLevel);
-			
-			// Storage
-			Append(~L_all, L);
-			Append(~Res_all, Res);
-			Append(~indexs_Res_all, indexs_Res);
-			Append(~sigma_all, <r, nu,sigma>);
-			Append(~epsilon_all, epsilon);
-			
-			// print
-			if verboseLevel in {"default", "onlyStrata", "detailed"} then
-				print L;
-				printf "\n";
-			end if;
+		end if;
+		
+		// Basis of the ideal whose roots make the residue =0
+		L := SimplifiedBasis(Res, indexs_Res, P, assumeNonzero : verboseLevel:=verboseLevel);
+		
+		// Storage
+		Append(~L_all, L);
+		Append(~Res_all, Res);
+		Append(~indexs_Res_all, indexs_Res);
+		Append(~sigma_all, <r, nu,sigma>);
+		Append(~epsilon_all, epsilon);
+		
+		// print
+		if verboseLevel in {"default", "onlyStrata", "detailed"} then
+			print L;
+			printf "\n";
+		end if;
+		
+		nuOld := nu;
+		
 		//until true;
 	end for;
 	
@@ -728,7 +603,7 @@ end intrinsic;
 
 intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNonzero:={}, verboseLevel:="default", planeBranchNumbers:=<>) -> List, List, List, List, List, {}
 	{
-		TO DO
+		Stratification of mu-constant plane branch deformations by the poles of the complex zeta function.
 		
 		assumeNonzero (if f is defined over a field of rational functions): a list of polynomials that can be assumed to not take the value zero,
 		verboseLevel: "none", "default", "onlyStrata", or "detailed"
@@ -737,8 +612,7 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 	
 	// Prepare arguments
 	if verboseLevel notin {"none","default","onlyStrata","detailed"} then verboseLevel:="default"; end if;
-	P<x,y> := Parent(f);
-	R := BaseRing(P);
+	P := Parent(f); x:=P.1; y:=P.2; R := BaseRing(P);
 	if #planeBranchNumbers eq 0 then // if not provided
 		_betas := SemiGroup(f);
 		planeBranchNumbers := PlaneBranchNumbers(_betas);
@@ -763,7 +637,7 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 	units_f := {*P| 1 *};
 	units_w := {*P| 1 *};
 	pointType := 0; // 0 -> starting point, 1 -> free point, 2 -> satellite point
-	PI_TOTAL := [x, y]; // Total blowup morphism since starting point
+	PI_TOTAL := [P| x, y]; // Total blowup morphism since starting point
 	L_all := [**];
 	Res_all := [**];
 	indexs_Res_all := [**];
@@ -788,9 +662,9 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 			printf "lambda = %o\n", lambda;
 		end if;
 		
-		ep := es[r+1];
+		ep := es[r +1];
 		// Total blowup morphism since starting point
-		PI_TOTAL := [Evaluate(t, PI_blowup) : t in PI_TOTAL];
+		PI_TOTAL := [P| Evaluate(t, PI_blowup) : t in PI_TOTAL];
 		// Multiplicities of rupture divisor x=0
 		Np := xyExp_f[1];
 		Kp := xyExp_w[1];
@@ -801,6 +675,7 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 		// 1) proximate non-rupture divisor through (0,0): y=0
 		// 2) proximate non-rupture divisor through (0,infinity)
 		// 3) the curve
+		// Np = N1 + N2 + ep (regardless of coordinates of N1,N2)
 		N := [N1, Np-N1-ep, ep];
 		k := [K1, Kp-K1-1, 0];
 		if debugPrint then
@@ -818,8 +693,6 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 		// printf "u = %o\n\n", u;
 		// printf "v = %o\n\n", v;
 		// printf "PI_TOTAL = %o\n\n", PI_TOTAL;
-		// printf "e = %o\n", ep;
-		// printf "k = %o\n", ks;
 		
 		nus := nuChoices[r];
 		
@@ -827,7 +700,7 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 			printf "nus = %o\n\n", nuChoices[r];
 		end if;
 		
-		L_all[r], Res_all[r], indexs_Res_all[r], sigma_all[r], epsilon_all[r] := ZetaFunctionResidue(< P, [x,y], PI_TOTAL[1], PI_TOTAL[2], strictTransform_f, units_f, units_w, lambda, ep, Np, Kp, N, k, nus, r, assumeNonzero > : verboseLevel:=verboseLevel);
+		L_all[r], Res_all[r], indexs_Res_all[r], sigma_all[r], epsilon_all[r] := ZetaFunctionResidue(strictTransform_f, units_f, units_w, PI_TOTAL, lambda, <ep, Np, Kp, N, k, nus, r> : assumeNonzero:=assumeNonzero, verboseLevel:=verboseLevel);
 		
 		// Prepare next iteration
 		if r lt g then
@@ -839,7 +712,7 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 			strictTransform_f, xyExp_f, xyExp_w, units_f, units_w, PI_center, assumeNonzero := CenterOriginOnCurve(strictTransform_f, xyExp_f cat xyExp_w, units_f, units_w, lambda, assumeNonzero : verboseLevel:=verboseLevel);
 			if debugPrint then printf "assumeNonzero =\n"; print assumeNonzero; end if;
 			// Total blowup morphism since starting point
-			PI_TOTAL := [Evaluate(t, PI_center) : t in PI_TOTAL];
+			PI_TOTAL := [P| Evaluate(t, PI_center) : t in PI_TOTAL];
 		end if;
 	end for;
 	

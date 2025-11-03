@@ -132,26 +132,27 @@ intrinsic FuncOnSeqElt(s::SeqEnum, I::SeqEnum, Funct::UserProgram, args::Any) ->
 end intrinsic;
 
 
+function GetElem(s, i, ee)
+	return s[i];
+end function;
+
 intrinsic SeqElt(s::SeqEnum, I::SeqEnum) -> Any
 	{
 		Return s[I], considering I as multi-index
 	}
-	function GetElem(s, i, ee)
-		return s[i];
-	end function;
 	return FuncOnSeqElt(s, I, GetElem, 0);
 end intrinsic;
 
+
+procedure EvaluateElt(~t, k, ee)
+	xii, eee := Explode(ee);
+	t[k] := Evaluate(t[k], xii, eee);
+end procedure;
 
 intrinsic EvaluateSeq(~s::SeqEnum, ~indexs::SetEnum, xi::RngMPolLocElt, e::Any)
 	{
 		Evaluate each s[I] at xi=e, considering I as multi-index, for all I in indexs
 	}
-	procedure EvaluateElt(~t, k, ee)
-		xii, eee := Explode(ee);
-		t[k] := Evaluate(t[k], xii, eee);
-	end procedure;
-
 	for I in indexs do
 		ProcOnSeqElt(~s, I, EvaluateElt, [xi,e]);
 		if SeqElt(s, I) eq 0 then // Remove zeros
