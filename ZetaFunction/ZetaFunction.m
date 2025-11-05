@@ -53,36 +53,33 @@ end intrinsic;
 
 // Formal derivatives
 
-intrinsic FormalDerivative(F::SeqEnum, indexsF::SetEnum, g::SeqEnum[RngMPolLocElt], xi::RngMPolLocElt) -> SeqEnum, SetEnum
+intrinsic FormalDerivative(F::SeqEnum, indexsF::SetEnum, g::SeqEnum[RngMPolLocElt], i::RngIntElt) -> SeqEnum, SetEnum
 	{
-		Formal derivative of the composition (F o (g1,...,gm))(x1,...) with respect to xi.
+		Formal derivative of the composition (F o (g1,...,gm))(x1,...) with respect to the i-th variable.
 		
-		F       : sequence of sequences m times, where F[a1,...,am] represents the
-							coefficient of (d_1^(a1-1) ... d_m^(am-1))F at (g1,...,gm)(x1,...).
+		F       : sequence of sequences m times, where F[a1,...,am] represents the coefficient of (d_1^(a1-1) ... d_m^(am-1))F at (g1,...,gm)(x1,...).
 		indexsF : nonzero elements of F.
 		g       : sequence of functions [g1,...,gm] of (x1,...).
-		xi      : derive with respect to xi.
+		i       : derive with respect to the i-th variable.
 	}
 	m := #g;
 	DiF := [];
 	indexsDiF := indexsF;
-	
-	// Derivate
+	// First term of the derivative: derivate the coefficients
 	for a in indexsF do
-		value := Derivative(SeqElt(F,a),1,xi);
+		value := Derivative(SeqElt(F,a),1,i);
 		AssignSeqElt(~DiF, a, value);
 	end for;
-	
+	// Second term of the derivative: derivate (F o g)
 	for a in indexsF do
 		for L in [1 .. m] do
 			b := a;
 			b[L] +:= 1;
-			value := SeqElt(F,a) * Derivative(g[L],1,xi);
+			value := SeqElt(F,a) * Derivative(g[L],1,i);
 			PlusAssignSeqElt(~DiF, b, value);
 			Include(~indexsDiF, b);
 		end for;
 	end for;
-	
 	// Remove zeros
 	for a in indexsDiF do
 		if SeqElt(DiF,a) eq 0 then
@@ -90,33 +87,7 @@ intrinsic FormalDerivative(F::SeqEnum, indexsF::SetEnum, g::SeqEnum[RngMPolLocEl
 			Exclude(~indexsDiF, a);
 		end if;
 	end for;
-	
 	return DiF, indexsDiF;
-end intrinsic;
-
-
-intrinsic FormalDerivative(F::SeqEnum, indexsF::SetEnum, g::SeqEnum[RngMPolLocElt], i::RngIntElt) -> SeqEnum, SetEnum
-	{
-		Formal derivative of the composition (F o (g1,...,gm))(x1,...) with respect to xi.
-		
-		F       : sequence of sequences m times, where F[a1,...,am] represents the
-							coefficient of (d_1^(a1-1) ... d_m^(am-1))F at (g1,...,gm)(x1,...).
-		indexsF : nonzero elements of F.
-		g       : sequence of functions [g1,...,gm] of (x1,...).
-		i       : derive with respect to the i-th variable.
-	}
-	return FormalDerivative(F, indexsF, g, Universe(g).i);
-end intrinsic;
-
-
-intrinsic FormalDerivative(F::SeqEnum, indexsF::SetEnum, g::SeqEnum[RngMPolLocElt], k::RngIntElt, xi::RngMPolLocElt) -> SeqEnum, SetEnum
-	{
-		Derivative of (F o g), k times with respect to xi
-	}
-	for j in [1..k] do
-		F, indexsF := FormalDerivative(F, indexsF, g, xi);
-	end for;
-	return F, indexsF;
 end intrinsic;
 
 
@@ -124,33 +95,16 @@ intrinsic FormalDerivative(F::SeqEnum, indexsF::SetEnum, g::SeqEnum[RngMPolLocEl
 	{
 		Derivative of (F o g), k times with respect to the i-th variable
 	}
-	return FormalDerivative(F, indexsF, g, k, Universe(g).i);
-end intrinsic;
-
-
-intrinsic FormalDerivative(F::SeqEnum, indexsF::SetEnum, g::SeqEnum[RngMPolLocElt], L::SeqEnum[Tup]) -> SeqEnum, SetEnum
-	{
-		L = Set( <k_1,i_1>, ..., <k_n,i_n> )
-			or
-		L = Set( <k_1,x_i_1>, ..., <k_n,x_i_n> ).
-		Derivate of (F o g) with respect to x_i, k times, for all <k,x_i> in L
-	}
-	if #L gt 0 then
-		k, v := Explode(L[1]);
-		require Type(k) eq RngIntElt and (Type(v) eq RngMPolLocElt or Type(v) eq RngIntElt) : "Bad argument types inside tuples of L\nArgument types given:", Type(k), ",", Type(v);
-	end if;
-	
-	for t in L do
-		k, v := Explode(t);
-		F, indexsF := FormalDerivative(F, indexsF, g, k, v);
+	for repetition in [1..k] do
+		F, indexsF := FormalDerivative(F, indexsF, g, i);
 	end for;
 	return F, indexsF;
 end intrinsic;
 
 
-intrinsic FormalDerivativeDiscardingVar(F::SeqEnum, indexsF::SetEnum, g::SeqEnum[RngMPolLocElt], k::RngIntElt, xi::RngMPolLocElt, discard::SeqEnum) -> SeqEnum, SetEnum
+intrinsic FormalDerivativeDiscardingVar(F::SeqEnum, indexsF::SetEnum, g::SeqEnum[RngMPolLocElt], k::RngIntElt, i::RngIntElt, discard::SeqEnum) -> SeqEnum, SetEnum
 	{
-		Derivative of (F o g), k times with respect to xi.
+		Derivative of (F o g), k times with respect to the i-th variable.
 		Discard terms with powers higher than x_discardVar^discardPow at the result
 	}
 	discardVar, discardPow := Explode(discard);
@@ -167,43 +121,13 @@ intrinsic FormalDerivativeDiscardingVar(F::SeqEnum, indexsF::SetEnum, g::SeqEnum
 	// Derivate k times, truncating high powers
 	for j in [1..k] do
 		// Derivate once
-		F, indexsF := FormalDerivative(F, indexsF, g, xi);
+		F, indexsF := FormalDerivative(F, indexsF, g, i);
 		// Truncate polynomials at x_discardVar^m where m is too high
 		for I in indexsF do
 			AssignSeqElt(~F, I,  &+[P | t : t in Terms(SeqElt(F,I)) | Degree(t,discardVar) le (k-j+discardPow)]);
 		end for;
 	end for;
 	
-	return F, indexsF;
-end intrinsic;
-
-
-intrinsic FormalDerivativeDiscardingVar(F::SeqEnum, indexsF::SetEnum, g::SeqEnum[RngMPolLocElt], k::RngIntElt, i::RngIntElt, discard::SeqEnum) -> SeqEnum, SetEnum
-	{
-		Derivative of (F o g), k times with respect to the i-th variable.
-		Discard polynomials that will result in x_discardVar^discardPow*(...) at the result
-	}
-	return FormalDerivativeDiscardingVar(F, indexsF, g, k, Universe(g).i, discard);
-end intrinsic;
-
-
-intrinsic FormalDerivativeDiscardingVar(F::SeqEnum, indexsF::SetEnum, g::SeqEnum[RngMPolLocElt], L::SeqEnum[Tup], discard::SeqEnum) -> SeqEnum, SetEnum
-	{
-		L = Set( <k_1,i_1>, ..., <k_n,i_n> )
-			or
-		L = Set( <k_1,x_i_1>, ..., <k_n,x_i_n> ).
-		Derivate of (F o g) with respect to x_i, k times, for all <k,x_i> in L.
-		Discard polynomials that will result in x_discardVar^discardPow*(...) at the result
-	}
-	if #L gt 0 then
-		k, v := Explode(L[1]);
-		require Type(k) eq RngIntElt and (Type(v) eq RngMPolLocElt or Type(v) eq RngIntElt) : "Bad argument types inside tuples of L\nArgument types given:", Type(k), ",", Type(v);
-	end if;
-	
-	for t in L do
-		k, v := Explode(t);
-		F, indexsF := FormalDerivativeDiscardingVar(F, indexsF, g, k, v, discard);
-	end for;
 	return F, indexsF;
 end intrinsic;
 
@@ -525,7 +449,7 @@ intrinsic ZetaFunctionResidue(strictTransform_f::RngMPolLocElt, units_f::SetMult
 		// printf "cot(pi*eps1)+cot(pi*eps3) = %o%o\n", RAprox!BFactor, (BFactor gt 0)select" !!!!!!"else"";
 		
 		// Derivative of 1/u(0,0)^s * Phi(pi1(...),pi2(...),u(...); x,y) with respect to x
-		Phi, indexs_Phi := FormalDerivativeDiscardingVar(Phi, indexs_Phi, [pi1, pi2, u1], nu-nuOld, x, [1, nuMax-nu]);
+		Phi, indexs_Phi := FormalDerivativeDiscardingVar(Phi, indexs_Phi, [pi1, pi2, u1], nu-nuOld, 1, [1, nuMax-nu]);
 		// Phi = partial_x^nu (u1^s * v * phi|_{pi1,pi2})
 		
 		DPhi := Phi;

@@ -2,50 +2,108 @@
 	Stratification of mu-constant plane branch deformations by the poles of the complex zeta function
 */
 
+//######################
+//### Input/settings
+//######################
+
+quitWhenFinished        := true;
+printDeformationProcess := false;
+printParameterOptions   := true;
+printCandidatesLong     := false;
+// For ZetaFunctionStratification(): "none", "default", "onlyStrata", "detailed"
+verboseLevel            := "default";
+// Print the stratification after the calculations have finished
+printResults            := false;
+// Print the Apij apart from the simplified stratification ideals (only used if printResults)
+printResultsApij        := false;
+curve                   := "deformation_restricted";
+
+// Curve semigroup and deformation settings, if applicable
+semigroupFromAbcd       := false;
+// If not semigroupFromAbcd
+semigroup               := [15,21,175];
+// If semigroupFromAbcd
+// Curves with coinciding candidates (2 characteristic exponents) given by
+// a>=2, b>=a+1, c>=2, d>=1, {a,b,c} pairwise coprime, {c,d} coprime
+abcd                    := [4,5,9,1];
+// If there are multiple equation options for each rupture divisor, which to choose
+whichEquations          := [1, 1];
+deformationParameters   := [];
+
+// Set of candidates for each rupture divisor
+useDefaultNus           := [true, true];
+// If not useDefaultNus (per candidate)
+nuChoices               := [[], []];
+// Whether to include as candidates the known topological poles/roots of geometric origin (default false, only used if useDefaultNus)
+includeTopological      := false;
+// Whether to include the candidates that coincide with a pole/root of geometric origin but whose nu is not in the corresponding semigroup (default false, only used if useDefaultNus)
+includeUndetermined     := true;
+
+predefinedSettings      := "4591";
+
+case predefinedSettings:
+	when "4591":
+		curve                   := "deformation_restricted";
+		semigroupFromAbcd       := true;
+		abcd                    := [4,5,9,1];
+		//whichEquations          := [1, 1];
+		deformationParameters   := [0,131,132]; // CANVIAR
+		useDefaultNus           := [false, false];
+		nuChoices               := [[2,4],[9,29]];
+	when "4571":
+		curve                   := "deformation_restricted";
+		semigroupFromAbcd       := true;
+		abcd                    := [4,5,7,1];
+		//whichEquations          := [1, 1];
+		deformationParameters   := [0,97,98];
+		useDefaultNus           := [false, false];
+		nuChoices               := [[2,4], [5,21]];
+	when "3871":
+		curve                   := "deformation_restricted";
+		semigroupFromAbcd       := true;
+		abcd                    := [3,8,7,1];
+		//whichEquations          := [1, 1];
+		deformationParameters   := [0,126];
+		useDefaultNus           := [false, false];
+		nuChoices               := [[2,6], [3,35]];
+end case;
+
+// semigroup
+// [15,21,175]
+// [5,12]
+// [15,21,175]
+// [18,48,146,441]
+// [36,96,292,881]
+// [5,7]
+// [6,17]
+// [4,6,13]
+// [4,10,21]
+// [6,9,22]
+// [6,14,43]
+// [8,18,73]
+// [10,15,36]
+// [10,24,121]
+// [36,96,292,881]
+// [8,12,26,53] 2-3|2-3|2-3
+// [12,16,50,101] 3-4|2-3|2-3
+// [12,18,38,115] 2-3|3-4|2-3
+// [12,18,39,79]  2-3|2-3|3-4
+// [18,45,93,281] 2-5|3-4|3-5 t=[1,73,235] nus=[[], [1,3,4], [2,3,5]];
+
+// abcd
+// [5,7,3,2]
+// [17,19,7,6]
+// [7,9,4,3]
+
+// deformationParameters
+// [1,73,235] [2,62] [0,2,95,96,98] [95,96,98] [17] [4,5] [7] [32] [35,36,37,38] "all" []
+
 //##########################
 //### Basic requirements
 //##########################
 AttachSpec("../SingularitiesDim2/IntegralClosureDim2.spec");
 AttachSpec("../ZetaFunction/ZetaFunction.spec");
 Z := IntegerRing(); Q := RationalField();
-
-//######################
-//### Input/settings
-//######################
-
-quitWhenFinished        := true;
-printDeformationProcess := true;
-printCandidatesLong     := false;
-verboseLevel            := "default";    // How much to pring during call to ZetaFunctionStratification(): "none", "default", "onlyStrata", "detailed"
-printResults            := true;         // Print the stratification after the calculations have finished
-printResultsApij        := false;        // Print the Apij apart from the simplified stratification ideals (only used if printResults)
-
-// Candidates
-useDefaultNus           := [true, true]; // Set of candidates for each rupture divisor
-nuChoices               := [[], []];     // For each rupture divisor which nus to use (only used if not useDefaultNus)
-includeTopological      := false;        // Whether to include as candidates the known topological poles/roots of geometric origin (default false, only used if useDefaultNus)
-includeUndetermined     := true;         // Whether to include the candidates that coincide with a pole/root of geometric origin but whose nu is not in the corresponding semigroup (default false, only used if useDefaultNus)
-
-curve                   := "deformation_restricted"; // Choose the curve/deformation
-
-// Semigroup (only if curve is "deformation_restricted", "deformation_GroebnerElimination", "deformation_cassou", or "deformation_cassou_mod")
-semigroup               := [6,14,43];
-// [15,21,175]; [5,12]; [15,21,175]; [18,48,146,441]; [36,96,292,881]; [5,7]; [6,17]; [4,6,13]; [4,10,21]; [6,9,22]; [6,14,43]; [8,18,73]; [10,15,36]; [10,24,121];
-// [8,12,26,53];   -> 2-3|2-3|2-3
-// [12,16,50,101]; -> 3-4|2-3|2-3
-// [12,18,38,115]; -> 2-3|3-4|2-3
-// [12,18,39,79];  -> 2-3|2-3|3-4
-// [18,45,93,281]; -> 2-5|3-4|3-5 t=[1,73,235] nus=[[], [1,3,4], [2,3,5]];
-// [36,96,292,881];
-// Curves with coinciding candidates: a>=2, b>=a+1, c>=2, {a,b,c} pairwise coprime, d>=1, {c,d} coprime
-abcd := [4,5,7,1]; // [4,5,7,1]; [3,8,7,1]; [5,7,3,2]; [17,19,7,6]; [7,9,4,3];
-//a,b,c,d := Explode(abcd); semigroup := [a*c,b*c,a*b*(c+d)];
-
-// Deformation settings (only if curve is "deformation_restricted", "deformation_GroebnerElimination", "deformation_cassou", or "deformation_cassou_mod")
-whichEquations          := [1, 1]; // If there are multiple equation options for each rupture divisor, which to choose
-deformationParameters   := "all"; //[1,73,235]; //[2,62]; //[0,2,95,96,98]; //[95,96,98]; //[17]; //[4,5]; //[7]; //[32]; //[35,36,37,38]; // "all"; // [];
-
-
 
 
 //#########################
@@ -54,6 +112,9 @@ deformationParameters   := "all"; //[1,73,235]; //[2,62]; //[0,2,95,96,98]; //[9
 
 originalCurveString := curve;
 assumeNonzero := {};
+if semigroupFromAbcd then
+	a,b,c,d := Explode(abcd); semigroup := [a*c,b*c,a*b*(c+d)];
+end if;
 printf "\n";
 // Definition of:
 //   - R: the base ring
@@ -638,7 +699,7 @@ case curve:
 		curve := &*[Sprint(_b)*"-" : _b in _betas];
 		curve := curve[1..#curve-1];
 		
-		if printDeformationProcess then print "Semigroup:", _betas; end if;
+		if printDeformationProcess or printParameterOptions then print "Semigroup:", _betas; end if;
 		
 		// Topological information
 		//semiGroupInfo := SemiGroupInfo(_betas);
@@ -693,14 +754,16 @@ case curve:
 				completeDeformation := false;
 			end if;
 		end for;
-		if printDeformationProcess then
+		if printDeformationProcess or printParameterOptions then
 			print "Can use complete deformation:", completeDeformation;
+		end if;
+		if printDeformationProcess then
 			print "Usable deformation:";
 			print Deformation;
 		end if;
 		
 		// Determine, separate and show the needed and optional deformation parameters
-		if printDeformationProcess then print "Parameters:"; end if;
+		if printDeformationProcess or printParameterOptions then print "Parameters:"; end if;
 		neededParams := []; // parameter needed at each Hi
 		optionalParams := []; // [ [optional parameters for Hi] ]
 		// Parameters of H_1, ..., H_{g-1}
@@ -725,7 +788,7 @@ case curve:
 				end if;
 			end for;
 			Sort(~optionalParams[i]);
-			if printDeformationProcess then printf "    Optional at E%o: %o\n", i, optionalParams[i]; end if;
+			if printDeformationProcess or printParameterOptions then printf "    Optional at E%o: %o\n", i, optionalParams[i]; end if;
 		end for;
 		// H_g treated separately, no neededParams
 		// H_g = h_g(u_0,...,u_g) + sum_r( t_?*phi_{r,g}(u_0,...,u_g) )
@@ -743,7 +806,7 @@ case curve:
 			end for;
 		end for;
 		Sort(~optionalParams[g]);
-		if printDeformationProcess then
+		if printDeformationProcess or printParameterOptions then
 			printf "    Optional at E%o: %o\n", g, optionalParams[g];
 			for i in [1..g-1] do
 				printf "    Needed at E%o: %o\n", i, neededParams[i];
@@ -754,7 +817,7 @@ case curve:
 		// Choose deformation parameters
 		// INPUT
 		parameters := deformationParameters;
-		if parameters eq "all" then
+		if Type(parameters) eq MonStgElt and parameters eq "all" then
 			parameters := optionalParams;
 		else
 			error if ((ExtendedType(parameters) ne SeqEnum[RngIntElt]) and (parameters ne [])), "Please define a valid list of parameters. Given ", parameters;
@@ -765,7 +828,7 @@ case curve:
 		parameters cat:= neededParams; // neededParams always have to be included
 		parameters := [p : p in Set(parameters)]; // remove duplicates
 		Sort(~parameters);
-		if printDeformationProcess then printf "Chosen parameters: %o\n", parameters; end if;
+		if printDeformationProcess or printParameterOptions then printf "Chosen parameters: %o\n", parameters; end if;
 		// Create structures with the new number of parameters
 		newT := #parameters; // (temp variable) updated # of parameters (t_0, ..., t_{newT-1})
 		PDeformation := LocalPolynomialRing(Q, newT+(g+1)); // polynomial ring with updated # of parameters
@@ -864,7 +927,7 @@ case curve:
 		curve := &*[Sprint(_b)*"-" : _b in _betas];
 		curve := curve[1..#curve-1];
 		
-		if printDeformationProcess then print "Semigroup:", _betas; end if;
+		if printDeformationProcess or printParameterOptions then print "Semigroup:", _betas; end if;
 		
 		// Topological information
 		//semiGroupInfo := SemiGroupInfo(_betas);
@@ -900,7 +963,7 @@ case curve:
 		T := totalDim-(g+1); // # of parameters (t_0, ..., t_{T-1})
 		
 		// Determine, separate and show the needed and optional deformation parameters
-		if printDeformationProcess then print "Parameters:"; end if;
+		if printDeformationProcess or printParameterOptions then print "Parameters:"; end if;
 		neededParams := []; // parameter needed at each Hi
 		optionalParams := []; // [ [optional parameters for Hi] ]
 		// Parameters of H_1, ..., H_{g-1}
@@ -925,7 +988,7 @@ case curve:
 				end if;
 			end for;
 			Sort(~optionalParams[i]);
-			if printDeformationProcess then printf "    Optional at E%o: %o\n", i, optionalParams[i]; end if;
+			if printDeformationProcess or printParameterOptions then printf "    Optional at E%o: %o\n", i, optionalParams[i]; end if;
 		end for;
 		// H_g treated separately, no neededParams
 		// H_g = h_g(u_0,...,u_g) + sum_r( t_?*phi_{r,g}(u_0,...,u_g) )
@@ -943,7 +1006,7 @@ case curve:
 			end for;
 		end for;
 		Sort(~optionalParams[g]);
-		if printDeformationProcess then
+		if printDeformationProcess or printParameterOptions then
 			printf "    Optional at E%o: %o\n", g, optionalParams[g];
 			for i in [1..g-1] do
 				printf "    Needed at E%o: %o\n", i, neededParams[i];
@@ -954,7 +1017,7 @@ case curve:
 		// Choose deformation parameters
 		// INPUT
 		parameters := deformationParameters;
-		if parameters eq "all" then
+		if Type(parameters) eq MonStgElt and parameters eq "all" then
 			parameters := optionalParams;
 		else
 			error if ((ExtendedType(parameters) ne SeqEnum[RngIntElt]) and (parameters ne [])), "Please define a valid list of parameters. Given ", parameters;
@@ -965,7 +1028,7 @@ case curve:
 		parameters cat:= neededParams; // neededParams always have to be included
 		parameters := [p : p in Set(parameters)]; // remove duplicates
 		Sort(~parameters);
-		if printDeformationProcess then printf "Chosen parameters: %o\n", parameters; end if;
+		if printDeformationProcess or printParameterOptions then printf "Chosen parameters: %o\n", parameters; end if;
 		// Create structures with the new number of parameters
 		newT := #parameters; // (temp variable) updated # of parameters (t_0, ..., t_{newT-1})
 		PDeformation := LocalPolynomialRing(Q, newT+(g+1)); // polynomial ring with updated # of parameters
@@ -1051,7 +1114,7 @@ case curve:
 		curve := &*[Sprint(_b)*"-" : _b in _betas];
 		curve := curve[1..#curve-1];
 		
-		if printDeformationProcess then print "Semigroup:", _betas; end if;
+		if printDeformationProcess or printParameterOptions then print "Semigroup:", _betas; end if;
 		
 		// Topological information
 		//semiGroupInfo := SemiGroupInfo(_betas);
@@ -1089,7 +1152,7 @@ case curve:
 		T := totalDim-(g+1); // # of parameters (t_0, ..., t_{T-1})
 		
 		// Determine, separate and show the needed and optional deformation parameters
-		if printDeformationProcess then print "Parameters:"; end if;
+		if printDeformationProcess or printParameterOptions then print "Parameters:"; end if;
 		neededParams := []; // parameter needed at each Fi
 		optionalParams := []; // [ [optional parameters for Fi] ]
 		// Parameters of F_1, ..., F_{g-1}
@@ -1114,7 +1177,7 @@ case curve:
 				end if;
 			end for;
 			Sort(~optionalParams[i]);
-			if printDeformationProcess then printf "    Optional at E%o: %o\n", i, optionalParams[i]; end if;
+			if printDeformationProcess or printParameterOptions then printf "    Optional at E%o: %o\n", i, optionalParams[i]; end if;
 		end for;
 		// F_g treated separately, no neededParams
 		// F_g = f_g(u_0,...,u_g) + sum_r( t_?*phi_{r,g}(u_0,...,u_g) )
@@ -1132,7 +1195,7 @@ case curve:
 			end for;
 		end for;
 		Sort(~optionalParams[g]);
-		if printDeformationProcess then
+		if printDeformationProcess or printParameterOptions then
 			printf "    Optional at E%o: %o\n", g, optionalParams[g];
 			for i in [1..g-1] do
 				printf "    Needed at E%o: %o\n", i, neededParams[i];
@@ -1143,7 +1206,7 @@ case curve:
 		// Choose deformation parameters
 		// INPUT
 		parameters := deformationParameters;
-		if parameters eq "all" then
+		if Type(parameters) eq MonStgElt and parameters eq "all" then
 			parameters := optionalParams;
 		else
 			error if ((ExtendedType(parameters) ne SeqEnum[RngIntElt]) and (parameters ne [])), "Please define a valid list of parameters. Given ", parameters;
@@ -1154,7 +1217,7 @@ case curve:
 		parameters cat:= neededParams; // neededParams always have to be included
 		parameters := [p : p in Set(parameters)]; // remove duplicates
 		Sort(~parameters);
-		if printDeformationProcess then printf "Chosen parameters: %o\n", parameters; end if;
+		if printDeformationProcess or printParameterOptions then printf "Chosen parameters: %o\n", parameters; end if;
 		// Create structures with the new number of parameters
 		newT := #parameters; // (temp variable) updated # of parameters (t_0, ..., t_{newT-1})
 		PDeformation := LocalPolynomialRing(Q, newT+(g+1)); // polynomial ring with updated # of parameters
@@ -1275,7 +1338,7 @@ case curve:
 		curve := &*[Sprint(_b)*"-" : _b in _betas];
 		curve := curve[1..#curve-1];
 		
-		if printDeformationProcess then print "Semigroup:", _betas; end if;
+		if printDeformationProcess or printParameterOptions then print "Semigroup:", _betas; end if;
 		
 		// Topological information
 		//semiGroupInfo := SemiGroupInfo(_betas);
@@ -1313,7 +1376,7 @@ case curve:
 		T := totalDim-(g+1); // # of parameters (t_0, ..., t_{T-1})
 		
 		// Determine, separate and show the needed and optional deformation parameters
-		if printDeformationProcess then print "Parameters:"; end if;
+		if printDeformationProcess or printParameterOptions then print "Parameters:"; end if;
 		neededParams := []; // parameter needed at each Fi
 		optionalParams := []; // [ [optional parameters for Fi] ]
 		// Parameters of F_1, ..., F_{g-1}
@@ -1338,7 +1401,7 @@ case curve:
 				end if;
 			end for;
 			Sort(~optionalParams[i]);
-			if printDeformationProcess then printf "    Optional at E%o: %o\n", i, optionalParams[i]; end if;
+			if printDeformationProcess or printParameterOptions then printf "    Optional at E%o: %o\n", i, optionalParams[i]; end if;
 		end for;
 		// F_g treated separately, no neededParams
 		// F_g = f_g(u_0,...,u_g) + sum_r( t_?*phi_{r,g}(u_0,...,u_g) )
@@ -1356,7 +1419,7 @@ case curve:
 			end for;
 		end for;
 		Sort(~optionalParams[g]);
-		if printDeformationProcess then
+		if printDeformationProcess or printParameterOptions then
 			printf "    Optional at E%o: %o\n", g, optionalParams[g];
 			for i in [1..g-1] do
 				printf "    Needed at E%o: %o\n", i, neededParams[i];
@@ -1367,7 +1430,7 @@ case curve:
 		// Choose deformation parameters
 		// INPUT
 		parameters := deformationParameters;
-		if parameters eq "all" then
+		if Type(parameters) eq MonStgElt and parameters eq "all" then
 			parameters := optionalParams;
 		else
 			error if ((ExtendedType(parameters) ne SeqEnum[RngIntElt]) and (parameters ne [])), "Please define a valid list of parameters. Given ", parameters;
@@ -1378,7 +1441,7 @@ case curve:
 		parameters cat:= neededParams; // neededParams always have to be included
 		parameters := [p : p in Set(parameters)]; // remove duplicates
 		Sort(~parameters);
-		if printDeformationProcess then printf "Chosen parameters: %o\n", parameters; end if;
+		if printDeformationProcess or printParameterOptions then printf "Chosen parameters: %o\n", parameters; end if;
 		// Create structures with the new number of parameters
 		numL := g-1;
 		newT := #parameters; // (temp variable) updated # of parameters (t_0, ..., t_{newT-1})
