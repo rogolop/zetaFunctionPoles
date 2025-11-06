@@ -6,66 +6,57 @@
 //### Input/settings
 //######################
 
-quitWhenFinished        := true;
-printDeformationProcess := false;
-printParameterOptions   := true;
-printCandidatesLong     := false;
-// For ZetaFunctionStratification(): "none", "default", "onlyStrata", "detailed"
-verboseLevel            := "default";
-// Print the stratification after the calculations have finished
-printResults            := false;
-// Print the Apij apart from the simplified stratification ideals (only used if printResults)
-printResultsApij        := false;
-curve                   := "deformation_restricted";
+quitWhenFinished           := true;
+printDeformationProcess    := false;
+printParameterOptions      := true;
+printCandidatesLong        := false;
+stratificationVerboseLevel := "default"; // "none" "default" "onlyStrata" "detailed"
+printResultsAfterCompute   := false;
+printApijInResults         := false;
 
-// Curve semigroup and deformation settings, if applicable
-semigroupFromAbcd       := false;
-// If not semigroupFromAbcd
-semigroup               := [15,21,175];
-// If semigroupFromAbcd
-// Curves with coinciding candidates (2 characteristic exponents) given by
-// a>=2, b>=a+1, c>=2, d>=1, {a,b,c} pairwise coprime, {c,d} coprime
-abcd                    := [4,5,9,1];
-// If there are multiple equation options for each rupture divisor, which to choose
-whichEquations          := [1, 1];
-deformationParameters   := [];
+curve                      := "deformation_restricted";
+semigroupFromAbcd          := false; // Curves with coinciding candidates (2 characteristic exponents)
+semigroup                  := [15,21,175];
+abcd                       := [4,5,9,1]; // a>=2, b>=a+1, c>=2, d>=1, {a,b,c} pairwise coprime, {c,d} coprime
+whichEquations             := [1, 1];
+deformationParameters      := [];
 
-// Set of candidates for each rupture divisor
-useDefaultNus           := [true, true];
-// If not useDefaultNus (per candidate)
-nuChoices               := [[], []];
-// Whether to include as candidates the known topological poles/roots of geometric origin (default false, only used if useDefaultNus)
-includeTopological      := false;
-// Whether to include the candidates that coincide with a pole/root of geometric origin but whose nu is not in the corresponding semigroup (default false, only used if useDefaultNus)
-includeUndetermined     := true;
+useDefaultCandidates       := [true, true];
+nusIfNotDefaultCandidates  := [[], []];
+includeTopologicalRootsOfGeometricOriginInDefaultCandidates := false;
+includeUndeterminedRootsInDefaultCandidates := true;
 
-predefinedSettings      := "4591";
-
+// OVERRIDE SETTINGS
+predefinedSettings         := "5732";
 case predefinedSettings:
-	when "4591":
-		curve                   := "deformation_restricted";
-		semigroupFromAbcd       := true;
-		abcd                    := [4,5,9,1];
-		//whichEquations          := [1, 1];
-		deformationParameters   := [0,131,132]; // CANVIAR
-		useDefaultNus           := [false, false];
-		nuChoices               := [[2,4],[9,29]];
-	when "4571":
-		curve                   := "deformation_restricted";
-		semigroupFromAbcd       := true;
-		abcd                    := [4,5,7,1];
-		//whichEquations          := [1, 1];
-		deformationParameters   := [0,97,98];
-		useDefaultNus           := [false, false];
-		nuChoices               := [[2,4], [5,21]];
+	when "5732":
+		curve                     := "deformation_restricted";
+		semigroupFromAbcd         := true;
+		abcd                      := [5,7,3,2];
+		deformationParameters     := [2,62];
+		useDefaultCandidates      := [false, false];
+		nusIfNotDefaultCandidates := [[10,11],[4,9]];
 	when "3871":
-		curve                   := "deformation_restricted";
-		semigroupFromAbcd       := true;
-		abcd                    := [3,8,7,1];
-		//whichEquations          := [1, 1];
-		deformationParameters   := [0,126];
-		useDefaultNus           := [false, false];
-		nuChoices               := [[2,6], [3,35]];
+		curve                     := "deformation_restricted";
+		semigroupFromAbcd         := true;
+		abcd                      := [3,8,7,1];
+		deformationParameters     := [0,126];
+		useDefaultCandidates      := [false, false];
+		nusIfNotDefaultCandidates := [[2,6], [3,35]];
+	when "4571":
+		curve                     := "deformation_restricted";
+		semigroupFromAbcd         := true;
+		abcd                      := [4,5,7,1];
+		deformationParameters     := [0,97,98];
+		useDefaultCandidates      := [false, false];
+		nusIfNotDefaultCandidates := [[2,4], [5,21]];
+	when "4591":
+		curve                     := "deformation_restricted";
+		semigroupFromAbcd         := true;
+		abcd                      := [4,5,9,1];
+		deformationParameters     := [0,129];
+		useDefaultCandidates      := [false, false];
+		nusIfNotDefaultCandidates := [[2,4],[9,29]];
 end case;
 
 // semigroup
@@ -1612,14 +1603,14 @@ printf "\n";
 
 nusForPoleCandidates, nusForRootCandidatesIncludingUndetermined, nusIncludingTopological, trueNonTopSigmas, coincidingTopAndNonTopSigmas, otherTopologicalSigmas, nonTopSigmaToIndexList, topologicalSigmaToIndexList, trueNonTopSigmasCoincidences, otherTopologicalSigmasCoincidences := CandidatesData(planeBranchNumbers);
 
-if includeTopological then
+if includeTopologicalRootsOfGeometricOriginInDefaultCandidates then
 	defaultNus := nusIncludingTopological;
-elif includeUndetermined then
+elif includeUndeterminedRootsInDefaultCandidates then
 	defaultNus := nusForRootCandidatesIncludingUndetermined;
 else
 	defaultNus := nusForPoleCandidates;
 end if;
-nuChoices := [ useDefaultNus[r] select defaultNus[r] else nuChoices[r] : r in [1..g]];
+nuChoices := [ useDefaultCandidates[r] select defaultNus[r] else nusIfNotDefaultCandidates[r] : r in [1..g]];
 
 // Print candidates info
 if printCandidatesLong then
@@ -1665,7 +1656,7 @@ else
 		end for;
 		printf "\n";
 	end for;
-	if includeUndetermined or includeTopological then
+	if includeUndeterminedRootsInDefaultCandidates or includeTopologicalRootsOfGeometricOriginInDefaultCandidates then
 		printf "\n_______________________________________________________________________\n";
 		printf "Topological poles that coincide with 'non-topological' sigmas (#=%o)\n", #coincidingTopAndNonTopSigmas;
 		for sigma in Reverse(Sort([sigma : sigma in coincidingTopAndNonTopSigmas])) do
@@ -1679,7 +1670,7 @@ else
 			printf "\n";
 		end for;
 	end if;
-	if includeTopological then
+	if includeTopologicalRootsOfGeometricOriginInDefaultCandidates then
 		printf "\n_______________________________________________________________________\n";
 		printf "Topological poles that coincide with topological poles (#=%o)\n", #otherTopologicalSigmasCoincidences ;
 		for sigma in Reverse(Sort([sigma : sigma in otherTopologicalSigmasCoincidences ])) do
@@ -1697,10 +1688,10 @@ printf "\n______________________________________________________________________
 printf "Calculating stratification for the following candidates:\n";
 for r in [1..g] do
 	printf "E_%o: ", r;
-	if useDefaultNus[r] then
-		if includeTopological then
+	if useDefaultCandidates[r] then
+		if includeTopologicalRootsOfGeometricOriginInDefaultCandidates then
 			printf "all candidates, including topological poles of geometric origin";
-		elif includeUndetermined then
+		elif includeUndeterminedRootsInDefaultCandidates then
 			printf "all candidates with nu not in Gamma_%o, ignoring coincidences with topological poles/roots of geometric origin", r;
 		else
 			printf "all non-geometric candidates";
@@ -1717,19 +1708,19 @@ printf "\n";
 //### Calculate stratification
 //################################
 
-L_all, sigma_all, assumeNonzero, Res_all, indexs_Res_all, epsilon_all := ZetaFunctionStratification(f : nuChoices:=nuChoices, assumeNonzero:=assumeNonzero, verboseLevel:=verboseLevel, planeBranchNumbers:=planeBranchNumbers);
+L_all, sigma_all, assumeNonzero, Res_all, indexs_Res_all, epsilon_all := ZetaFunctionStratification(f : nuChoices:=nuChoices, assumeNonzero:=assumeNonzero, verboseLevel:=stratificationVerboseLevel, planeBranchNumbers:=planeBranchNumbers);
 
 //#####################
 //### Print results
 //#####################
 
-if printResults then
+if printResultsAfterCompute then
 	printf "\n_______________________________________________________________________\n";
 	printf "RESULTS\n\n";
 	for r in [1..g] do
 		for rootIdx in [1..#L_all[r]] do
 			printf "sigma_{%o,%o}=%o\n", sigma_all[r][rootIdx][1], sigma_all[r][rootIdx][2], sigma_all[r][rootIdx][3];
-			if printResultsApij then
+			if printApijInResults then
 				for AIdx->ij in Sort([elt : elt in indexs_Res_all[r][rootIdx]]) do
 					printf "[%o,%o]\n", ij[1], ij[2];
 					IndentPush();
