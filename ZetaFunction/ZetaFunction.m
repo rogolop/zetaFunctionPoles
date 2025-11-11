@@ -607,6 +607,7 @@ intrinsic ZetaFunctionStratification(f::RngMPolLocElt : nuChoices:=[], assumeNon
 			printf "strict = %o \n", strictTransform_f;
 		end if;
 		if (verboseLevel in {"detailed"}) then
+			printf "Total blowup = "; print PI_TOTAL;
 			printf "ep = %o \n", ep;
 			printf "es = %o \n", es;
 			printf "Np = %o, Nps[r] = %o\n", Np, Nps[r];

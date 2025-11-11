@@ -345,6 +345,81 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 	PI_blowup := [P| x, y];
 	
 	if verboseLevel in {"detailed"} then printf "Start Blowup\n"; end if;
+	
+	tan := TangentTerm(strictTransform_f);
+	if verboseLevel in {"detailed"} then
+		printf "\n--------------------\n";
+		printf "pointType = %o\n", pointType;
+		printf "strictTransform_f = %o\n", strictTransform_f;
+		printf "tan = %o\n", tan;
+		printf "local blowup so far = "; print PI_blowup;
+	end if;
+	error if (TotalDegree(tan) le 0), "At Blowup(): Tangent term is constant\nstrictTransform_f=", strictTransform_f, "\n tangent=", tan; // Should never happen
+	
+	if pointType eq 0 then
+		if verboseLevel in {"detailed"} then printf "pointType eq 0\n"; end if;
+		// Ensure x=0 not tangent at initial point
+		if Degree(tan,2) eq 0 then
+			if verboseLevel in {"detailed"} then printf "Tangent=C*x^e => change of variables (y,x) to make x=0 not tangent\n"; end if;
+			// Tangent=C*x^e => change of variables (y,x) to make x=0 not tangent
+			
+			pi := [P| y, x];
+			PI_blowup := [P| Evaluate(t, pi) : t in PI_blowup];
+			
+			// The following should be irrelevant:
+			xExp_f, yExp_f := Explode(< yExp_f, xExp_f >);
+			xExp_w, yExp_w := Explode(< yExp_w, xExp_w >);
+			units_f := {*P| Evaluate(t, pi)^^m : t -> m in units_f *};
+			units_w := {*P| Evaluate(t, pi)^^m : t -> m in units_w *};
+			
+			// Strict transform of f
+			strictTransform_f, A, B := strictPart(Evaluate(strictTransform_f, pi));
+			xExp_f +:= A;
+			yExp_f +:= B;
+			
+			// dy^dx = -dx^dy
+			Include(~units_w, P!-1);
+			
+			if verboseLevel in {"detailed"} then printf "strictTransform_f = %o\n", strictTransform_f; end if;
+		else
+			if (Degree(tan,1) ne 0) then
+				// Not tan=C*y^e => tan=C*(a*x + b*y)^e
+				
+				// Remove common multiplicative unit
+				num := GCD([RingOfIntegers(R)| Numerator(coeff) : coeff in Coefficients(tan)]);
+				den := GCD([RingOfIntegers(R)| Denominator(coeff) : coeff in Coefficients(tan)]);
+				tan := tan * den / num;
+				// tan=(a*x + b*y)^e
+				
+				e := Degree(tan, y);
+				bToTheE := MonomialCoefficient(tan, y^e);
+				if verboseLevel in {"detailed"} then
+					printf "bToTheE = %o\n", bToTheE;
+					print &*[R| tup[1] : tup in Factorization(Numerator(bToTheE))];
+					print &*[R| tup[1] : tup in Factorization(Denominator(bToTheE))];
+				end if;
+				
+				if Type(R) eq FldFunRat then // R = Q(t_1,...,t_k)
+					if bToTheE notin BaseRing(R) then // bToTheE depends on t_i
+						nonzeroFactors := [RingOfIntegers(R)| tup[1] : tup in Factorization(Numerator(bToTheE)) cat Factorization(Denominator(bToTheE))];
+						//bNonzeroFactors := Reduce(bNonzeroFactors);
+						firstPrint := true;
+						for h in nonzeroFactors do
+							if h notin assumeNonzero then
+							//if h notin ideal<RingOfIntegers(R)| assumeNonzero> then
+								if firstPrint then printf "\n"; firstPrint := false; end if;
+								printf "WARNING! Assuming that the following is nonzero:\n"; print h; printf "\n";
+								Include(~assumeNonzero, h);
+								//assumeNonzero := Reduce(assumeNonzero);
+							end if;
+						end for;
+					end if;
+				end if;
+			end if;
+		end if;
+	end if;
+		
+	
 	while true do
 		tan := TangentTerm(strictTransform_f);
 		if verboseLevel in {"detailed"} then
@@ -352,71 +427,9 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 			printf "pointType = %o\n", pointType;
 			printf "strictTransform_f = %o\n", strictTransform_f;
 			printf "tan = %o\n", tan;
+			printf "local blowup so far = "; print PI_blowup;
 		end if;
 		error if (TotalDegree(tan) le 0), "At Blowup(): Tangent term is constant\nstrictTransform_f=", strictTransform_f, "\n tangent=", tan; // Should never happen
-		
-		if pointType eq 0 then
-			if verboseLevel in {"detailed"} then printf "pointType eq 0\n"; end if;
-			// Ensure x=0 not tangent at initial point
-			if Degree(tan,2) eq 0 then
-				if verboseLevel in {"detailed"} then printf "Tangent=C*x^e => change of variables (y,x) to make x=0 not tangent\n"; end if;
-				// Tangent=C*x^e => change of variables (y,x) to make x=0 not tangent
-				
-				pi := [P| y, x];
-				PI_blowup := [P| Evaluate(t, pi) : t in PI_blowup];
-				
-				// The following should be irrelevant:
-				xExp_f, yExp_f := Explode(< yExp_f, xExp_f >);
-				xExp_w, yExp_w := Explode(< yExp_w, xExp_w >);
-				units_f := {*P| Evaluate(t, pi)^^m : t -> m in units_f *};
-				units_w := {*P| Evaluate(t, pi)^^m : t -> m in units_w *};
-				
-				// Strict transform of f
-				strictTransform_f, A, B := strictPart(Evaluate(strictTransform_f, pi));
-				xExp_f +:= A;
-				yExp_f +:= B;
-				
-				// dy^dx = -dx^dy
-				Include(~units_w, P!-1);
-				
-				if verboseLevel in {"detailed"} then printf "strictTransform_f = %o\n", strictTransform_f; end if;
-			else
-				if (Degree(tan,1) ne 0) then
-					// Not tan=C*y^e => tan=C*(a*x + b*y)^e
-					
-					// Remove common multiplicative unit
-					num := GCD([RingOfIntegers(R)| Numerator(coeff) : coeff in Coefficients(tan)]);
-					den := GCD([RingOfIntegers(R)| Denominator(coeff) : coeff in Coefficients(tan)]);
-					tan := tan * den / num;
-					// tan=(a*x + b*y)^e
-					
-					e := Degree(tan, y);
-					bToTheE := MonomialCoefficient(tan, y^e);
-					if verboseLevel in {"detailed"} then
-						printf "bToTheE = %o\n", bToTheE;
-						print &*[R| tup[1] : tup in Factorization(Numerator(bToTheE))];
-						print &*[R| tup[1] : tup in Factorization(Denominator(bToTheE))];
-					end if;
-					
-					if Type(R) eq FldFunRat then // R = Q(t_1,...,t_k)
-						if bToTheE notin BaseRing(R) then // bToTheE depends on t_i
-							nonzeroFactors := [RingOfIntegers(R)| tup[1] : tup in Factorization(Numerator(bToTheE)) cat Factorization(Denominator(bToTheE))];
-							//bNonzeroFactors := Reduce(bNonzeroFactors);
-							firstPrint := true;
-							for h in nonzeroFactors do
-								if h notin assumeNonzero then
-								//if h notin ideal<RingOfIntegers(R)| assumeNonzero> then
-									if firstPrint then printf "\n"; firstPrint := false; end if;
-									printf "WARNING! Assuming that the following is nonzero:\n"; print h; printf "\n";
-									Include(~assumeNonzero, h);
-									//assumeNonzero := Reduce(assumeNonzero);
-								end if;
-							end for;
-						end if;
-					end if;
-				end if;
-			end if;
-		end if;
 		
 		if (pointType ne 0) and (Length(tan) eq 1) and (Exponents(tan)[2] eq 0) and (Exponents(tan)[1] gt 0) then
 			if verboseLevel in {"detailed"} then printf "Tangent=C*x^e => next point is satellite\n"; end if;
@@ -563,7 +576,7 @@ intrinsic Blowup(strictTransform_f::RngMPolLocElt, xyExp_fw::[], units_f::SetMul
 	if verboseLevel in {"detailed"} then
 		printf "\n";
 		printf "lambda = %o\n", lambda;
-		printf "total mophism = %o\n", PI_blowup;
+		printf "local blowup final = "; print PI_blowup;
 		printf "strict transform = %o\n", strictTransform_f;
 		printf "total transform of f has x^%o y^%o %o\n", xExp_f, yExp_f, &cat[Sprintf("(%o)^%o ",u,m):u->m in units_f];
 		printf "total transform of w has x^%o y^%o %o\n", xExp_w, yExp_w, &cat[Sprintf("(%o)^%o ",u,m):u->m in units_w];;
@@ -590,7 +603,6 @@ intrinsic CenterOriginOnCurve(strictTransform_f::RngMPolLocElt, xyExp_fw::[], un
 		printf "\n";
 		printf "--------------------\n";
 		printf "Start CenterOriginOnCurve\n";
-		printf "\n";
 		printf "strictTransform_f = %o\n", strictTransform_f;
 	end if;
 	
@@ -635,8 +647,9 @@ intrinsic CenterOriginOnCurve(strictTransform_f::RngMPolLocElt, xyExp_fw::[], un
 	// dx^d(1/lambda + y) = dx^dy
 	
 	if verboseLevel in {"detailed"} then
-		printf "\nstrictTransform_f = %o\n", strictTransform_f;
-		printf "\nEnd CenterOriginOnCurve\n";
+		printf "Change of variables = "; print pi;
+		printf "strictTransform_f = %o\n", strictTransform_f;
+		printf "End CenterOriginOnCurve\n\n";
 	end if;
 	
 	return strictTransform_f, [xExp_f,yExp_f], [xExp_w,yExp_w], units_f, units_w, pi, assumeNonzero;
