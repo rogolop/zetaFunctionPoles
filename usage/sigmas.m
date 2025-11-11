@@ -11,13 +11,43 @@ quitWhenFinished    := true;
 printCandidatesLong := false;
 printCandidatesShort := false;
 
-if false then
-	semigroups := Sort([<[a,b,c,d],[a*c,b*c,a*b*(c+d)]> :
-		d in [1..9],
-		c in [2..9],
-		b in [a+1..9],
-		a in [2..9] |
-		GCD(a,b) eq 1 and GCD(a,c) eq 1 and GCD(b,c) eq 1 and GCD(c,d) eq 1]);
+if true then
+	// semigroups := [<[a,b,c,d],[a*c,b*c,a*b*(c+d)]> :
+	// 	d in [1..25],
+	// 	c in [2..25],
+	// 	b in [a+1..25],
+	// 	a in [2..25] |
+	// 	GCD(a,b) eq 1 and GCD(a,c) eq 1 and
+	// 	GCD(b,c) eq 1 and GCD(c,d) eq 1];
+	semigroups := [];
+	aRange := [2..40];
+	bMax := 40;
+	for i->a in aRange do
+		for j->b in [a+1..bMax] do
+		printf "Approx. progress: %o/%o\n", i*bMax + j, (#aRange *bMax);
+		if GCD(a,b) eq 1 then
+		for c in [2..40] do
+		if GCD(a,c) eq 1 and GCD(b,c) eq 1 then
+		for d in [1..40] do
+		if GCD(c,d) eq 1 then
+			G := [a*c,b*c,a*b*(c+d)];
+			mu := MilnorNumber(G);
+			if mu le 420 then
+				Append(~semigroups, <mu,[a,b,c,d],G>);
+			end if;
+		end if;
+		end for;
+		end if;
+		end for;
+		end if;
+		end for;
+	end for;
+	// semigroups := [tup : tup in semigroups | MilnorNumber(tup[2]) le 420];
+	printf "Semigroups calculated\n";
+	// printf "Milnor numbers calculated\n";
+	// ParallelSort(~milnorNumbers, ~semigroups);
+	Sort(~semigroups);
+	printf "Sorted\n\n";
 else
 	semigroups := Sort([<[a,b,c,d],[a*c,b*c,a*b*(c+d)]> :
 		a in {abcd[1]},
@@ -26,7 +56,7 @@ else
 		d in {abcd[4]},
 		abcd in [[3,8,7,1], [4,5,7,1], [4,5,9,1]] ]);
 end if;
-for tup in semigroups do
+for i->tup in semigroups do
 	abcd, G := Explode(tup);
 	planeBranchNumbers := PlaneBranchNumbers(G);
 	g, c, betas, es, ms, ns, qs, _betas, _ms, Nps, kps, Ns, ks := Explode(planeBranchNumbers);
@@ -36,20 +66,28 @@ for tup in semigroups do
 		IndentPush();
 		// printf "nonTop coincidences: %o\n", #trueNonTopSigmasCoincidences;
 		M, e := ProximityMatrix(G);
-		printf "#Blowups=%o -> %o\n", Ncols(e), e;
-		printf "Non-topological coincidences:\n";
-		for sigma in trueNonTopSigmasCoincidences do
-			print nonTopSigmaToIndexList[sigma];
-		end for;
-		printf "Topological-non-topological coincidences:\n";
-		for sigma in coincidingTopAndNonTopSigmas do
-			printf "%o = %o\n", &cat[Sprintf("%o",tup) cat ((i gt 1)select"="else"") : i->tup in topologicalSigmaToIndexList[sigma]], &cat[Sprintf("%o",tup) cat ((i gt 1)select"="else"") : i->tup in nonTopSigmaToIndexList[sigma]];
-		end for;
+		printf "Milnor number = %o\n\n", MilnorNumber(_betas);
+		// printf "#Blowups=%o -> %o\n", Ncols(e), e;
+		
+		printf "#Blowups=%o\n", Ncols(e);
+		printf "Non-topological coincidences: %o\n", #trueNonTopSigmasCoincidences;
+		printf "Topological-non-topological coincidences: %o\n", #coincidingTopAndNonTopSigmas;
+		
+		// printf "Non-topological coincidences:\n";
+		// for sigma in trueNonTopSigmasCoincidences do
+		// 	print nonTopSigmaToIndexList[sigma];
+		// end for;
+		// printf "Topological-non-topological coincidences:\n";
+		// for sigma in coincidingTopAndNonTopSigmas do
+		// 	printf "%o = %o\n", &cat[Sprintf("%o",tup) cat ((i gt 1)select"="else"") : i->tup in topologicalSigmaToIndexList[sigma]], &cat[Sprintf("%o",tup) cat ((i gt 1)select"="else"") : i->tup in nonTopSigmaToIndexList[sigma]];
+		// end for;
+		
 		printf "\n";
 		IndentPop();
 	end if;
 end for;
 
+printf "\nFinished.\n";
 quit; ////////////////////////////////////////////////
 
 // a,b,c pairwise coprime

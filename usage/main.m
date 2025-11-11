@@ -8,55 +8,84 @@
 
 quitWhenFinished           := true;
 printDeformationProcess    := false;
-printParameterOptions      := true;
+printParameterOptions      := false;
+printPlaneBranchNumbers    := true;
 printCandidatesLong        := false;
-stratificationVerboseLevel := "default"; // "none" "default" "onlyStrata" "detailed"
+stratificationVerboseLevel := "detailed"; // "none" "default" "onlyStrata" "detailed"
 printResultsAfterCompute   := false;
 printApijInResults         := false;
 
 curve                      := "deformation_restricted";
 semigroupFromAbcd          := false; // Curves with coinciding candidates (2 characteristic exponents)
-semigroup                  := [15,21,175];
+semigroup                  := [12,16,50,101];
 abcd                       := [4,5,9,1]; // a>=2, b>=a+1, c>=2, d>=1, {a,b,c} pairwise coprime, {c,d} coprime
-whichEquations             := [1, 1];
+whichEquations             := [1, 1, 1];
 deformationParameters      := [];
 
-useDefaultCandidates       := [true, true];
-nusIfNotDefaultCandidates  := [[], []];
+useDefaultCandidates       := [false, false, false];
+nusIfNotDefaultCandidates  := [[], [], []];
 includeTopologicalRootsOfGeometricOriginInDefaultCandidates := false;
 includeUndeterminedRootsInDefaultCandidates := true;
 
 // OVERRIDE SETTINGS
-predefinedSettings         := "5732";
+predefinedSettings         := "";
 case predefinedSettings:
+	when "4-6-13":
+		printDeformationProcess    := false;
+		printParameterOptions      := true;
+		printPlaneBranchNumbers    := true;
+		printCandidatesLong        := false;
+		stratificationVerboseLevel := "detailed";
+		printResultsAfterCompute   := false;
+		printApijInResults         := false;
+		curve                      := "deformation_restricted";
+		semigroupFromAbcd          := false;
+		semigroup                  := [4,6,13];
+		whichEquations             := [1, 1];
+		deformationParameters      := "all";
+		useDefaultCandidates       := [true, true];
+	when "6-14-43":
+		printDeformationProcess    := false;
+		printParameterOptions      := true;
+		printPlaneBranchNumbers    := true;
+		printCandidatesLong        := false;
+		stratificationVerboseLevel := "default";
+		printResultsAfterCompute   := false;
+		printApijInResults         := false;
+		curve                      := "deformation_restricted";
+		semigroupFromAbcd          := false;
+		semigroup                  := [6,14,43];
+		whichEquations             := [1, 1];
+		deformationParameters      := "all";
+		useDefaultCandidates       := [true, true];
 	when "5732":
-		curve                     := "deformation_restricted";
-		semigroupFromAbcd         := true;
-		abcd                      := [5,7,3,2];
-		deformationParameters     := [2,62];
-		useDefaultCandidates      := [false, false];
-		nusIfNotDefaultCandidates := [[10,11],[4,9]];
+		curve                      := "deformation_restricted";
+		semigroupFromAbcd          := true;
+		abcd                       := [5,7,3,2];
+		deformationParameters      := [2,62];
+		useDefaultCandidates       := [false, false];
+		nusIfNotDefaultCandidates  := [[10,11],[4,9]];
 	when "3871":
-		curve                     := "deformation_restricted";
-		semigroupFromAbcd         := true;
-		abcd                      := [3,8,7,1];
-		deformationParameters     := [0,126];
-		useDefaultCandidates      := [false, false];
-		nusIfNotDefaultCandidates := [[2,6], [3,35]];
+		curve                      := "deformation_restricted";
+		semigroupFromAbcd          := true;
+		abcd                       := [3,8,7,1];
+		deformationParameters      := [0,126];
+		useDefaultCandidates       := [false, false];
+		nusIfNotDefaultCandidates  := [[2,6], [3,35]];
 	when "4571":
-		curve                     := "deformation_restricted";
-		semigroupFromAbcd         := true;
-		abcd                      := [4,5,7,1];
-		deformationParameters     := [0,97,98];
-		useDefaultCandidates      := [false, false];
-		nusIfNotDefaultCandidates := [[2,4], [5,21]];
+		curve                      := "deformation_restricted";
+		semigroupFromAbcd          := true;
+		abcd                       := [4,5,7,1];
+		deformationParameters      := [0,97,98];
+		useDefaultCandidates       := [false, false];
+		nusIfNotDefaultCandidates  := [[2,4], [5,21]];
 	when "4591":
-		curve                     := "deformation_restricted";
-		semigroupFromAbcd         := true;
-		abcd                      := [4,5,9,1];
-		deformationParameters     := [0,129];
-		useDefaultCandidates      := [false, false];
-		nusIfNotDefaultCandidates := [[2,4],[9,29]];
+		curve                      := "deformation_restricted";
+		semigroupFromAbcd          := true;
+		abcd                       := [4,5,9,1];
+		deformationParameters      := [0,129];
+		useDefaultCandidates       := [false, false];
+		nusIfNotDefaultCandidates  := [[2,4],[9,29]];
 end case;
 
 // semigroup
@@ -1557,6 +1586,19 @@ else
 end if;
 planeBranchNumbers := PlaneBranchNumbers(_betas);
 g, c, betas, es, ms, ns, qs, _betas, _ms, Nps, kps, Ns, ks := Explode(planeBranchNumbers);
+
+if printPlaneBranchNumbers then
+	printf "g=%o, c=%o\n", g, c;
+	printf "betas=%o, ms=%o\n", betas, ms;
+	printf "_betas=%o, _ms=%o\n", _betas, _ms;
+	printf "qs=%o\n", qs;
+	printf "es=%o, ns=%o\n", es, ns;
+	printf "Nps=%o, kps=%o\n", Nps, kps;
+	printf "Ns="; print Ns;
+	printf "ks="; print ks;
+	printf "Milnor number = %o\n\n", MilnorNumber(_betas);
+end if;
+
 
 // Print proximity matrix
 printf "Proximity:\n";
