@@ -20,15 +20,15 @@ if true then
 	// 	GCD(a,b) eq 1 and GCD(a,c) eq 1 and
 	// 	GCD(b,c) eq 1 and GCD(c,d) eq 1];
 	semigroups := [];
-	aRange := [2..40];
-	bMax := 40;
+	aRange := [2..50];
+	bMax := 70;
 	for i->a in aRange do
 		for j->b in [a+1..bMax] do
-		printf "Approx. progress: %o/%o\n", i*bMax + j, (#aRange *bMax);
+		printf "Approx. progress: %o/%o\n", (i-1)*bMax + j-1, #aRange * bMax;
 		if GCD(a,b) eq 1 then
-		for c in [2..40] do
+		for c in [2..30] do
 		if GCD(a,c) eq 1 and GCD(b,c) eq 1 then
-		for d in [1..40] do
+		for d in [1..30] do
 		if GCD(c,d) eq 1 then
 			G := [a*c,b*c,a*b*(c+d)];
 			mu := MilnorNumber(G);
@@ -49,29 +49,30 @@ if true then
 	Sort(~semigroups);
 	printf "Sorted\n\n";
 else
-	semigroups := Sort([<[a,b,c,d],[a*c,b*c,a*b*(c+d)]> :
-		a in {abcd[1]},
-		b in {abcd[2]},
-		c in {abcd[3]},
-		d in {abcd[4]},
-		abcd in [[3,8,7,1], [4,5,7,1], [4,5,9,1]] ]);
+	// semigroups := Sort([<[a,b,c,d],[a*c,b*c,a*b*(c+d)]> :
+	// 	a in {abcd[1]},
+	// 	b in {abcd[2]},
+	// 	c in {abcd[3]},
+	// 	d in {abcd[4]},
+	// 	abcd in [[3,8,7,1], [4,5,7,1], [4,5,9,1]] ]);
 end if;
+
+//print semigroups;
+
 for i->tup in semigroups do
-	abcd, G := Explode(tup);
+	mu, abcd, G := Explode(tup);
 	planeBranchNumbers := PlaneBranchNumbers(G);
 	g, c, betas, es, ms, ns, qs, _betas, _ms, Nps, kps, Ns, ks := Explode(planeBranchNumbers);
 	nusForPoleCandidates, nusForRootCandidatesIncludingUndetermined, nusIncludingTopological, trueNonTopSigmas, coincidingTopAndNonTopSigmas, otherTopologicalSigmas, nonTopSigmaToIndexList, topologicalSigmaToIndexList, trueNonTopSigmasCoincidences, otherTopologicalSigmasCoincidences := CandidatesData(planeBranchNumbers);
 	if #trueNonTopSigmasCoincidences gt 0 then
-		printf "a=%o, b=%o, c=%o, d=%o -> Semigroup %o\n", abcd[1], abcd[2], abcd[3], abcd[4], _betas;
+		printf "abcd %o, semigroup %o\n", abcd, _betas;
 		IndentPush();
 		// printf "nonTop coincidences: %o\n", #trueNonTopSigmasCoincidences;
 		M, e := ProximityMatrix(G);
-		printf "Milnor number = %o\n\n", MilnorNumber(_betas);
+		printf "#blowups %o, mu %o\n", Ncols(e), mu;
 		// printf "#Blowups=%o -> %o\n", Ncols(e), e;
 		
-		printf "#Blowups=%o\n", Ncols(e);
-		printf "Non-topological coincidences: %o\n", #trueNonTopSigmasCoincidences;
-		printf "Topological-non-topological coincidences: %o\n", #coincidingTopAndNonTopSigmas;
+		printf "#coincidences non-top/top-non-top: %o, %o\n", #trueNonTopSigmasCoincidences, #coincidingTopAndNonTopSigmas;
 		
 		// printf "Non-topological coincidences:\n";
 		// for sigma in trueNonTopSigmasCoincidences do
