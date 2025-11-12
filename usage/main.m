@@ -8,10 +8,10 @@
 
 quitWhenFinished           := true;
 printDeformationProcess    := false;
-printParameterOptions      := false;
+printParameterOptions      := true;
 printPlaneBranchNumbers    := true;
 printCandidatesLong        := false;
-stratificationVerboseLevel := "detailed"; // "none" "default" "onlyStrata" "detailed"
+stratificationVerboseLevel := "default"; // "none" "default" "onlyStrata" "detailed"
 printResultsAfterCompute   := false;
 printApijInResults         := false;
 
@@ -28,8 +28,28 @@ includeTopologicalRootsOfGeometricOriginInDefaultCandidates := false;
 includeUndeterminedRootsInDefaultCandidates := true;
 
 // OVERRIDE SETTINGS
-predefinedSettings         := "";
+predefinedSettings         := "4731";
 case predefinedSettings:
+	when "4731":
+		stratificationVerboseLevel := "default";
+		curve                      := "deformation_restricted";
+		semigroupFromAbcd          := true;
+		abcd                       := [ 4, 7, 3, 1 ];
+		deformationParameters      := [1,48];
+		useDefaultCandidates       := [false, false];
+		nusIfNotDefaultCandidates  := [[6,8],[7,15]];
+		printResultsAfterCompute   := true;
+		printApijInResults         := false;
+	when "31721":
+		stratificationVerboseLevel := "default";
+		curve                      := "deformation_restricted";
+		semigroupFromAbcd          := true;
+		abcd                       := [3, 17, 2, 1];
+		deformationParameters      := [0,1,4];
+		useDefaultCandidates       := [false, false];
+		nusIfNotDefaultCandidates  := [[11,15],[2,14]];
+		printResultsAfterCompute   := true;
+		printApijInResults         := false;
 	when "4-6-13":
 		printDeformationProcess    := false;
 		printParameterOptions      := true;
